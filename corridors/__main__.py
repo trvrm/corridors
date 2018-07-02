@@ -11,6 +11,11 @@ import names
 from .import config
 from . import utilities
 from . import game
+from . import bots
+
+from .game import Game, User
+from .board import locationFromDirection, hopTarget
+
 PROJECT_ROOT= pathlib.Path(__file__).resolve().parent
 
 
@@ -31,28 +36,15 @@ The backend tracks this stuff on the ws object.
 The STATE object handles:
     a list of sockets
     a list of games
+    
+    
+What do we mean exactly by 'current game'?
+I don't think that's a fact that belongs to a user, but to a socket connection.
+
+
 '''
 
-class User:
-    '''
-        No serialization, recreated on each refresh for now.
-    '''
-    def __init__(self):
-        self.uuid=uuid.uuid4()
-        self.name=names.get_first_name()
-        self.game=None
-        
-    def __str__(self):
-        return self.name
-    def __repr__(self):
-        return f"User ({self.name}:{self.uuid})"
 
-    def __json__(self):
-        return {
-            'name':self.name,
-            'uuid':self.uuid
-        }
-        
 class SharedState:
     def __init__(self):
         self.sockets=[]
@@ -69,18 +61,17 @@ class SharedState:
             {
                 'uuid':game.uuid,
                 'players':game.players,
-                'turn':game.board.turn
+                'turn':game.board.turn,
             }
             for game in self.games
-        ]
+            if not game.board.gameOver()
+        ][-10:]  # or whatever
+        # should we flush out old games?
     def game_by_uuid(self,uuid):
         l=[g for g in self.games if g.uuid==uuid]
         if l:
             return l[0]
             
-
-    
-    
 shared = SharedState()
 message_handlers={}
 
@@ -92,12 +83,22 @@ def handle(name):
     
 
 @handle('new_game')
-async def handle_new_game(ws):
+async def handle_new_game(ws,who):
+    assert who in ('human','bot')
     user=ws.user
-    user.game=game.Game(player=user)
     
-    shared.games.append(user.game)
-    await ractive_set(ws,'user.game',user.game)
+    # This is probably a mistake: presumably a user can 
+    # be in more than one game at once?
+    game=Game(red=user)
+    
+    
+    if 'bot'==who:
+        game.players['blue']=bots.StepsAndWallsBot(-0.3,"sw bot")
+    
+    # store current game on socket, not on user!
+    ws.game=game
+    shared.games.append(game)
+    await ractive_set(ws,'current_game',game)
     await broadcast_game_list()
 
 async def broadcast_game_list():
@@ -115,37 +116,138 @@ async def handle_join_game(ws,uuid):
         await notify(ws,"Already in this game","danger")
     else:
         game.players['blue']=user
-        user.game=game
-        logging.info(shared.game_list())
-        await ractive_set(ws,'user.game',user.game)
-    await broadcast_game_list()
         
-@handle('game.command')
-async def handle_game_command(ws,command_text):
-    logging.info(command_text)
+        ws.game=game
+        logging.info(shared.game_list())
+        await ractive_set(ws,'current_game',game)
+    await broadcast_game_list()
     
-    command=command_text.split()
     
-    
+def user_can_move(ws):
+    game = ws.game
+    if not game:return False
     user=ws.user
-    if user.game:
-        try:
-            if command[0] in ('hwall','vwall'):
-                location = tuple([int(x) for x in command[1:]])
-                assert len(location)==2
-                command = [command[0],location]
+    if not user: return False
+    assert game.board.turn in ('red','blue')
+    player = game.players[game.board.turn]
+    if player!=user: return False
+    return True
+    
+@handle('game.select')    
+async def handle_game_select(ws,what):
+    '''
+        User selected a piece or a wall to move/place
+    '''
+    assert what in ('piece','wall')
+    assert user_can_move(ws), "User can't currently make a move on this board."
+    
+    game=ws.game
+    
+    if what=='wall':
+        if game.selected=='hwall':
+            game.selected='vwall'
+        else:
+            game.selected='hwall'
+    else:
+        if game.selected=='piece':
+            game.selected=None
+        else:
+            game.selected='piece'
+    
+    await ractive_set(ws,'current_game.selected',game.selected)
+    
+    
+    # massive scope for optimization here!
+    commands = list(game.board.allLegalCommands())
+    # send available moves/wall
+    if game.selected=='piece':
+        commands = [
+            c for c in commands
+            if c[0] in('hop','move')
+        ]
+        piece=game.board.currentPiece()
+        location=piece.location
+        
+        locations=[
+            locationFromDirection(location,c[1])
+            if c[0]=='move'
+            else
+            hopTarget(location,c[1],c[2])
+            for c in commands
+        ]
+        
+    else:
+        commands=[
+            c for c in commands 
+            if c[0]==game.selected  # hwall or vwall
+        ]
+        locations=[
+            c[1] for c in commands
+            if c[0]==game.selected
+        ]
+    
+    await ractive_set(ws,'current_game.locations',locations)
+    await ractive_set(ws,'current_game.commands',commands)
+    
+    
+    # If it's a piece we should set currently available moves?
+    # 
+    
+@handle('game.command')
+async def handle_game_command(ws,command):
+    
+    
+    if isinstance(command,str):
+        command=command.split()
+    else:
+        assert isinstance(command,list)
+    
+    logging.info(command)
+    user=ws.user
+    
+    game = ws.game
+    if not game:return
+    
+    # should check that game.user ==ws.user!
+    
+    assert game.board.turn in ('red','blue')
+    player = game.players[game.board.turn]
+    assert player==user, "user/player mismatch"
+    
+    # ok so this user is playing on this board and can make a move.
+    
+    game.selected=None
+    try:
+        if command[0] in ('hwall','vwall'):
+            #location = tuple([int(x) for x in command[1:]])
+            location = command[1]
+            
+            assert len(location)==2
+            #command = [command[0],location]
+            
+        
+        logging.info(command)
+        game.board(*command)
+        
+        await ractive_set(ws,'current_game',game)
+        
+        
+        if isinstance(game.players['blue'],bots.BaseBot):
+            if not game.board.gameOver():
+                bot=game.players['blue']
+                command = bot(game.board)
+                logging.info("Bot suggest :{}".format(command))
+                game.board(*command)
+                await ractive_set(ws,'current_game',game)
+                
                 
             
-            logging.info(command)
-            user.game.board(*command)
-            await ractive_set(ws,'user.game',user.game)
-            
-            # should also send to other user here!
-            
-            
-        except Exception as e:
-            await notify(ws,str(e),'danger')
-            logging.exception(e)
+        # should also send to other user here!
+        
+        
+    except Exception as e:
+        await notify(ws,str(e),'danger')
+        logging.exception(e)
     
 async def broadcast_push(keypath,value):
     shared.flush()
@@ -199,9 +301,6 @@ async def websocket_handler(request):
         ws = web.WebSocketResponse()
         await ws.prepare(request)
         shared.sockets.append(ws)
-        
-        await ractive_set(ws,'test',"TEST MESsAGE")
-        await notify(ws,"Hello")
         
         user=User()
         ws.user=user

@@ -1,10 +1,30 @@
 
 Ractive.components.GameList = Ractive.extend({
-        
+    css:`
+    .table.is-scrollable tbody {
+      overflow-y: scroll;
+      max-height:20em;
+    }
+
+    `,
     template:`
-    <h1 class="title is-4">Available Games:</h1>
-    <table class="table">
+    
+<!--
+<button class="button is-info" on-click="ws.send('new_game','human')">
+    New game vs human
+</button>
+-->
+<button class="button is-info is-small is-outlined is-rounded" on-click="ws.send('new_game','bot')">
+    New game vs bot
+</button>
+
+    <table class="table is-scrollable">
         <thead>
+            <tr>
+                <th colspan="5 ">
+                    Games
+                </th>
+            </tr>
             <tr>
                 <th></th>
                 <th>Red</th>
@@ -37,12 +57,6 @@ Ractive.components.GameList = Ractive.extend({
     </table>
     
         
-    <button 
-      class="button is-info"
-        on-click="ws.send('new_game')"
-      >
-      New game
-  </button>
 `
 });
     

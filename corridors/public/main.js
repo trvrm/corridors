@@ -10,27 +10,23 @@ const MainScreen = Ractive.extend({
     <NavBar readyState={{readyState}} user={{user}}/>
     
     <section class="section">
-        <div class="container">
-            <Notifications notifications={{notifications}} /> 
+        <div class="container is-fluid">
+            
             <div class="columns">
                 <div class="column is-one-third">
+                <Notifications notifications={{notifications}} /> 
                     <GameList games={{games}} ws={{ws}}/>
                 </div>
                 <div class="column">
-                    <h1 class="title is-5">
-                        Current Game is
-                    </h1>
-                    {{#if user.game}}
-                        {{user.game.players.red.name}} - {{user.game.players.blue.name}}
+                    {{#if current_game}}
+                        {{current_game.players.red.name}} - {{current_game.players.blue.name}}
                         <br>
                         <div class="has-text-centered">
-                        <GameBoard game={{user.game}} ws={{ws}}/>
+                            <GameBoard game={{current_game}} ws={{ws}} user={{user}} your_turn={{your_turn}}/>
                         </div>
                     {{/if}}
-                    
                 </div>
             </div>
-            
         </div>
     </section>
     

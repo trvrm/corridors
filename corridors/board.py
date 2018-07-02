@@ -1,10 +1,7 @@
 # coding: utf-8
 '''
-    I'd love to re-implement this in cython to see
-    what kind of speedup I get!
-    
-    
-    How about I take a different approach to speedups, with monkey patching?
+    I haven't brought over my cython-optimized speedups from the 
+    original code base, just to keep things simple.
 '''
 import numpy as np
 import attr
@@ -12,21 +9,12 @@ import copy
 import functools
 import datetime
 from enum import Enum
+
 from . import balanced_ternary
 
 from attr.validators import instance_of
 
-
-
-EMPTY      = 0
-HORIZONTAL = 1
-VERTICAL   = -1
-
-
-UP    = 0
-DOWN  = 1
-LEFT  = 2
-RIGHT = 3
+from .movement import UP,DOWN, LEFT,RIGHT, canMove
 
     
 def defaultDrawnGrid(N):
@@ -61,7 +49,9 @@ class Piece:
         return {
             "color":self.color,
             "location":self.location,
-            "walls":self.walls
+            "walls":self.walls,
+            
+            
         }
 
 def locationFromDirection(location,direction):
@@ -71,7 +61,11 @@ def locationFromDirection(location,direction):
     if 'left' == direction:   return j,  i-1
     if 'right'== direction:   return j,  i+1
     
-
+def hopTarget(location,d1,d2):
+    location = locationFromDirection(location,d1)
+    location = locationFromDirection(location,d2)
+    return location
+    
 class BrokenRule(Exception):
     pass
     
@@ -116,43 +110,12 @@ MOVE_COMMANDS=[
     ['move','right'],
 ]
 
-def canMove(M,walls,  j,   i,   direction):
-    if UP==direction:
-        if j==0: return 0
-        if i>0:
-            if walls[(j-1,i-1)]==HORIZONTAL: return 0
-        if i<M:
-            if walls[(j-1,i  )]==HORIZONTAL: return 0
-    
-    if LEFT==direction:    
-        if i==0: return 0
-        if j>0:
-            if walls[(j-1,i-1)]==VERTICAL: return 0
-        if j<M:
-            if walls[(j  ,i-1)]==VERTICAL: return 0
-    
-    if RIGHT==direction:
-        if i>=M: return 0
-        if j>0:
-            if walls[(j-1,i   )]==VERTICAL: return 0
-        if j<M:
-            if walls[(j  ,i  )]==VERTICAL: return 0
-    
-    if DOWN==direction:
-        if j>=M: return 0
-        if i>0:
-            if walls[(j  ,i-1)]==HORIZONTAL: return 0
-        if i<M:
-            if walls[(j  ,i  )]==HORIZONTAL: return 0
-    
-    return 1 
-
 
 @functools.lru_cache()
 def wallCommands(boardSize):
     M = boardSize-1
     return [
-        [cmd, j, i]
+        [cmd, (j, i)]
         for cmd in ['hwall','vwall']
         for j in range(M)
         for i in range(M)
@@ -191,11 +154,10 @@ class Board:
         
     def __json__(self):
         return{
-
-            "pieces":{
-                "red":self.red,
-                "blue":self.blue,
-            },
+    
+            "red":self.red,
+            "blue":self.blue,
+        
             "walls":[
                 [int(cell) for cell in row]
                 for row in self.walls
@@ -205,7 +167,7 @@ class Board:
             "settings":{
                 "N":self.N,
                 "walls_per_piece":self.wallsPerPiece
-            }
+            },
             
         }
     
@@ -303,6 +265,8 @@ class Board:
         if (i==0)        and (direction=='left'):  return False
         if (i>=M)        and (direction=='right'): return False
         
+        
+        
         # check piece location
         
         # we DON'T want to to do this check when testing escapability!
@@ -359,10 +323,6 @@ class Board:
                             return True
             return  False
 
-        #return compiled.speedups.canEscape(self,piece)
-        
-        #cdef int [:, :] walls_view = board.walls #.astype(np.int32)
-        
         target_rank     = 0 if piece.color=='red' else N-1
         
         return inner(piece.location,target_rank)
@@ -411,8 +371,9 @@ class Board:
         return            escapable
     
     def _addWall(self,location, orientation):
-        assert isinstance(location,tuple)
         assert len(location)==2
+        location=tuple(location)  # in case it's a list
+        
         assert not self.gameOver(), "Game over, dude!"
         assert orientation in (HORIZONTAL,VERTICAL)
         
@@ -449,6 +410,9 @@ class Board:
         piece.location = locationFromDirection(piece.location,d1)
         piece.location = locationFromDirection(piece.location,d2)
         
+    
+    
+    
     def _move(self, direction):
         assert not self.gameOver(), "Game over, dude!"
         assert direction in ('up','down','left','right')
@@ -466,10 +430,14 @@ class Board:
     def _endTurn(self):
         self.turn = 'red' if self.turn=='blue' else 'blue'
     
+    
+    def currentPiece(self):
+        return getattr(self,self.turn)
+    
     def legalCommand(self,command):
         if self.gameOver():return False
         action  = command[0]
-        piece   = getattr(self,self.turn)
+        piece   = self.currentPiece()
         
         if 'hop'==action:
             return self.legalHop(piece.location, *command[1:])
@@ -480,6 +448,8 @@ class Board:
             
             # messy, we should fix
             location=command[1]
+            assert len(location)==2
+            location=tuple(location)  # in case it's a list
             return (
                 piece.walls>0
                 and self.legalWall(location,orientation) 
@@ -544,8 +514,67 @@ class Board:
         )+self.info()+'-'*20+'\n\n'
 
     def allLegalCommands(self):
+        '''
+            I suspect if _this_ was a generator, 
+            then we could get some awesome early-termination speedups in a 
+            pruning tree search.  I.e. if we aborted early, we wouldn't have to 
+            even check the legality of later commands 
+            
+            This should be set/cached every time we make a move.
+        '''
         return (
             command
             for command in boardCommands(self.N)
             if self.legalCommand(command)
         )
+
+def arrayToBoard(a):
+    M=int(np.sqrt(len(a)-8))
+    N=M+1
+    wallsPerPiece=a[-1]
+    
+    assert M*M+8==len(a)
+    board=Board(N,wallsPerPiece)
+    board.walls=a[0:-8].reshape((M,M)).astype(np.int32)
+    board.red.location = tuple(a[-8:-6])
+    board.blue.location= tuple(a[-6:-4])
+    board.red.walls    = a[-4]
+    board.blue.walls   = a[-3]
+    board.turn         ='blue' if a[-2] else 'red'
+    return board
+    
+    
+    
+    
+def encode(board):
+    assert board.N<10
+    walls =  balanced_ternary.decode(board.walls.flatten())
+    extra = "{}.{}.{}.{}.{}.{}.{}.{}.{}.".format(
+        board.N,
+        board.wallsPerPiece,
+        board.red.location[0],
+        board.red.location[1],
+        board.red.walls,
+        board.blue.location[0],
+        board.blue.location[1],
+        board.blue.walls,
+        int(board.turn=='red')
+
+    )
+    return  extra + str(walls)
+
+def decode(s):
+    N, wallsPerPiece, rl0, rl1, rwalls, bl0,bl1, bwalls, turn, walls = [int(el) for el in s.split('.')]
+    
+    walls = balanced_ternary.encode(walls)
+    while(len(walls)<(N-1)**2):
+        walls.insert(0,0)
+
+    board=Board(N,wallsPerPiece)
+    board.walls = np.array(walls).astype('int32').reshape(N-1,N-1)
+    board.red.location=rl0,rl1
+    board.red.walls=rwalls
+    board.blue.location=bl0,bl1
+    board.blue.walls=bwalls
+    board.turn = 'red' if turn else 'blue'
+    return board    
