@@ -45,16 +45,13 @@ class BaseBot:
         commandScores = list(zip(commands,scores))
         commandScores.sort(key = lambda p: p[1])
         
-        logging.info(commandScores)
         if board.turn=='red':
             best=commandScores[-1]
         else:
             best=commandScores[0]
 
         command,score=best
-        
-        logging.info(f"Suggested Command :{command}, score {score} from {len(commands)}" )
-        return best[0]
+        return command
     
    
 class RandomBot(BaseBot):

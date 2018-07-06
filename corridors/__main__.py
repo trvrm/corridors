@@ -40,20 +40,18 @@ def handle(name):
 @handle('new_game')
 async def handle_new_game(ws,who):
     assert who in ('human','bot')
-    user=ws.user
     
-    # This is probably a mistake: presumably a user can 
-    # be in more than one game at once?
-    game=Game(red=user)
+    game=Game(red=ws.user)
     
     
     if 'bot'==who:
         game.players['blue']=bots.StepsBot2()
-        #game.players['blue']=bots.AdaptiveDepthAlphaBetaBot(bots.StepsBot2())
     
-    # store current game on socket, not on user!
     ws.game=game
     shared.games.append(game)
+    
+    await ractive_set(ws,'current_color','red')
+    await ractive_set(ws,'other_color','blue')
     await ractive_set(ws,'current_game',game)
     await broadcast_game_list()
 
@@ -75,6 +73,9 @@ async def handle_join_game(ws,uuid):
         
         ws.game=game
         logging.info(shared.game_list())
+        
+        await ractive_set(ws,'current_color','blue')
+        await ractive_set(ws,'other_color','red')
         await ractive_set(ws,'current_game',game)
     await broadcast_game_list()
     
@@ -264,6 +265,7 @@ async def websocket_handler(request):
         shared.sockets.append(ws)
         
         ws.user=new_user()
+        shared.users.append(ws.user)
         await ractive_set(ws,'user',ws.user)
         await ractive_set(ws,'games',shared.game_list())
         

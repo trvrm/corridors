@@ -31,10 +31,7 @@ Ractive.components.GameBoard = Ractive.extend({
         .wallslot{
             fill: #000000;
         }.
-        .redwalls.selectable{
-            stroke: black;
-            stroke-width:2;
-        }
+        
         .piece{
             
         }
@@ -43,41 +40,35 @@ Ractive.components.GameBoard = Ractive.extend({
             stroke-width:4;
         }
     `,    
-    
-    yourturn(game,user) {
-        /*Should be set on backend*/
-        return game.players[game.board.turn].uuid==user.uuid;
-    },
-    yourcolor(game,user){
-        if (game.players.red.uuid==user.uuid)
-            return 'red';
-        if (game.players.blue.uuid==user.uuid)
-            return 'blue';
-        return null;
-        
-    }
-    ,
+ 
     template:`
-        
-        <svg width="650" height="550" class="cm-chessboard default">
-            <g class="board">
-                <rect width="650" height="550" class="border"></rect>
+        <svg width="650" height="500" class=" default">
+            <g class="board" transform="rotate({{current_color=='red'?0:180}} 325 250)">
+                <rect width="650" height="500" class="border"></rect>
                 <g class="bluewalls" transform="translate(0,15)">
                     
                     {{#each [0,1,2,3,4,5,6,7,8,9] as i}}
-                        <rect 
-                            x="5" y="{{i*50}}" width="90" height="8"   rx="2" ry="2" 
-                            class="{{i<game.board.blue.walls?'wall':'wallslot'}}"
-                        >
-                        </rect>
+                        {{#if (game.board.blue.walls) && (game.board.turn==current_color) && (current_color=='blue')}}
+                            <rect 
+                                on-click="ws.send('game.select','wall')"
+                                x="5" y="{{i*50}}" width="90" height="8"   rx="2" ry="2" 
+                                class="{{i<game.board.blue.walls?'wall':'wallslot'}}"
+                            ></rect>
+                        {{else}}
+                            <rect 
+                                x="5" y="{{i*50}}" width="90" height="8"   rx="2" ry="2" 
+                                class="{{i<game.board.blue.walls?'wall':'wallslot'}}"
+                            >
+                            </rect>
+                        {{/if}}
+                        
                     {{/each}}
                     
                 </g>
                 <g class="redwalls" transform="translate(550,15)">
-                
                     
                     {{#each [0,1,2,3,4,5,6,7,8,9] as i}}
-                        {{#if (game.board.red.walls) && (@this.yourturn(game,user))}}
+                        {{#if (game.board.red.walls) && (game.board.turn==current_color) && (current_color=='red')}}
                             <rect 
                                 on-click="ws.send('game.select','wall')"
                                 x="5" y="{{i*50}}" width="90" height="8"   rx="2" ry="2" 
@@ -126,10 +117,17 @@ Ractive.components.GameBoard = Ractive.extend({
                         {{/each}}
                     {{/if}}
                     <g class="piece blue" transform="translate({{50*game.board.blue.location[1]}},{{50*game.board.blue.location[0]}})">
-                        <circle cx="25" cy="25" r="15" stroke="black" stroke-width="1" fill="blue" />
+                        {{#if (game.board.turn==current_color) && (current_color=='blue')}}
+                            <circle cx="25" cy="25" r="15" stroke="black" stroke-width="1" fill="blue" 
+                                on-click="ws.send('game.select','piece')"
+                                class="piece {{game.selected=='piece'?'selected':''}}"
+                            />
+                        {{else}}
+                            <circle cx="25" cy="25" r="15" stroke="black" stroke-width="1" fill="blue" />
+                        {{/if}}
                     </g>
                     <g class="piece red" transform="translate({{50*game.board.red.location[1]}},{{50*game.board.red.location[0]}})">
-                        {{#if @this.yourturn(game,user)}}
+                        {{#if (game.board.turn==current_color) && (current_color=='red')}}
                             <circle cx="25" cy="25" r="15" stroke="black" stroke-width="1" fill="red" 
                                 on-click="ws.send('game.select','piece')"
                                 class="piece {{game.selected=='piece'?'selected':''}}"
@@ -186,9 +184,15 @@ Ractive.components.GameBoard = Ractive.extend({
             Winner: {{game.winner}}
         {{/if}}
         
-        <pre style="display:naone">
+        <pre style="display:none">
             DEBUG
-            Turn: {{game.board.turn}}
+            
+            walls: {{game.board.red.walls}}/{{game.board[current_color].walls}}
+            Current Color:{{current_color}}
+            Other Color: {{other_color}}
+            Your Turn2: {{game.board.turn==current_color}}
+        
+        
             Selected: {{game.selected}}
         
             Red: {{game.players.red.uuid}}

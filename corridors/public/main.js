@@ -18,14 +18,21 @@ const MainScreen = Ractive.extend({
                     
                     <GameList games={{games}} ws={{ws}}/>
                     <hr>
-                    <pre style="font-size:smaller">{{JSON.stringify(.,null,2)}}</pre>
+                    <pre style="display:none">{{JSON.stringify(.,null,2)}}</pre>
                 </div>
                 <div class="column">
                     {{#if current_game}}
                         {{current_game.players.red.name}} - {{current_game.players.blue.name}}
                         <br>
                         <div class="has-text-centered">
-                            <GameBoard game={{current_game}} ws={{ws}} user={{user}} your_turn={{your_turn}}/>
+                            <GameBoard 
+                                ws={{ws}}
+                                game={{current_game}}
+                                user={{user}}
+                                
+                                current_color={{current_color}}
+                                other_color={{other_color}}
+                            />
                         </div>
                     {{/if}}
                 </div>
