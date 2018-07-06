@@ -6,72 +6,27 @@ import asyncio
 from aiohttp import web
 import json
 import sys
+
 import uuid
-import names
-from .import config
+
+from . import config
 from . import utilities
-from . import game
+
 from . import bots
 
-from .game import Game, User
+from .game import Game
+from .user import User
 from .board import locationFromDirection, hopTarget
+from .state import SharedState
 
 PROJECT_ROOT= pathlib.Path(__file__).resolve().parent
 
 
-'''
-Workflow:
+def new_user():
+    n = 2+len(shared.users)
+    name = f"User {n}"
+    return User(name)
 
-When you open the page, you get assigned a uid.
-
-You see a LIST OF GAMES
-
-You can START a game or ENTER a game.
-
-A GAME has zero, one, or two players assigned to it.
-You can join a game that has zero or one players assigned to it.
-
-The backend tracks this stuff on the ws object.
-
-The STATE object handles:
-    a list of sockets
-    a list of games
-    
-    
-What do we mean exactly by 'current game'?
-I don't think that's a fact that belongs to a user, but to a socket connection.
-
-
-'''
-
-
-class SharedState:
-    def __init__(self):
-        self.sockets=[]
-        self.games=[]
-        
-    def flush(self):
-        self.sockets=[
-            s for s in self.sockets
-            if not s.closed
-        ]
-        
-    def game_list(self):
-        return [
-            {
-                'uuid':game.uuid,
-                'players':game.players,
-                'turn':game.board.turn,
-            }
-            for game in self.games
-            if not game.board.gameOver()
-        ][-10:]  # or whatever
-        # should we flush out old games?
-    def game_by_uuid(self,uuid):
-        l=[g for g in self.games if g.uuid==uuid]
-        if l:
-            return l[0]
-            
 shared = SharedState()
 message_handlers={}
 
@@ -93,7 +48,8 @@ async def handle_new_game(ws,who):
     
     
     if 'bot'==who:
-        game.players['blue']=bots.StepsAndWallsBot(-0.3,"sw bot")
+        game.players['blue']=bots.StepsBot2()
+        #game.players['blue']=bots.AdaptiveDepthAlphaBetaBot(bots.StepsBot2())
     
     # store current game on socket, not on user!
     ws.game=game
@@ -227,6 +183,7 @@ async def handle_game_command(ws,command):
             
         
         logging.info(command)
+        # really need a 
         game.board(*command)
         
         await ractive_set(ws,'current_game',game)
@@ -240,7 +197,11 @@ async def handle_game_command(ws,command):
                 game.board(*command)
                 await ractive_set(ws,'current_game',game)
                 
+        else:
                 
+            sockets=shared.sockets_for_game(game.uuid)
+            for s in sockets:
+                await ractive_set(s,'current_game',game)
             
         # should also send to other user here!
         
@@ -302,9 +263,8 @@ async def websocket_handler(request):
         await ws.prepare(request)
         shared.sockets.append(ws)
         
-        user=User()
-        ws.user=user
-        await ractive_set(ws,'user',user)
+        ws.user=new_user()
+        await ractive_set(ws,'user',ws.user)
         await ractive_set(ws,'games',shared.game_list())
         
         async for msg in ws:

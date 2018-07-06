@@ -9,11 +9,11 @@ Ractive.components.GameList = Ractive.extend({
     `,
     template:`
     
-<!--
-<button class="button is-info" on-click="ws.send('new_game','human')">
+
+<button class="button is-info is-small is-outlined is-rounded" on-click="ws.send('new_game','human')">
     New game vs human
 </button>
--->
+
 <button class="button is-info is-small is-outlined is-rounded" on-click="ws.send('new_game','bot')">
     New game vs bot
 </button>

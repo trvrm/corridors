@@ -14,8 +14,11 @@ const MainScreen = Ractive.extend({
             
             <div class="columns">
                 <div class="column is-one-third">
-                <Notifications notifications={{notifications}} /> 
+                    <Notifications notifications={{notifications}} />
+                    
                     <GameList games={{games}} ws={{ws}}/>
+                    <hr>
+                    <pre style="font-size:smaller">{{JSON.stringify(.,null,2)}}</pre>
                 </div>
                 <div class="column">
                     {{#if current_game}}

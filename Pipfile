@@ -8,13 +8,14 @@ name = "pypi"
 [packages]
 
 aiohttp = "*"
-names = "*"
 numpy = "*"
 
 
 [dev-packages]
 
 ipython = "*"
+pytest = "*"
+"flake8" = "*"
 
 
 [requires]

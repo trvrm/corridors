@@ -48,8 +48,18 @@ Ractive.components.GameBoard = Ractive.extend({
         /*Should be set on backend*/
         return game.players[game.board.turn].uuid==user.uuid;
     },
+    yourcolor(game,user){
+        if (game.players.red.uuid==user.uuid)
+            return 'red';
+        if (game.players.blue.uuid==user.uuid)
+            return 'blue';
+        return null;
+        
+    }
+    ,
     template:`
-        <svg width="650" height="550    " class="cm-chessboard default">
+        
+        <svg width="650" height="550" class="cm-chessboard default">
             <g class="board">
                 <rect width="650" height="550" class="border"></rect>
                 <g class="bluewalls" transform="translate(0,15)">
@@ -176,7 +186,7 @@ Ractive.components.GameBoard = Ractive.extend({
             Winner: {{game.winner}}
         {{/if}}
         
-        <pre style="display:none">
+        <pre style="display:naone">
             DEBUG
             Turn: {{game.board.turn}}
             Selected: {{game.selected}}

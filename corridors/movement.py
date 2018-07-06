@@ -42,36 +42,41 @@ def canMove(M,walls,  j,   i,   direction):
 
 
 
-def stepsToEscape(board,piece):
-  N = board.N
-  M = N-1
-  walls = board.walls
-  squares = np.full((N,N),None)
+def _stepsToEscape(board,piece):
+    N = board.N
+    M = N-1
+    walls = board.walls
+    squares = np.full((N,N),None)
   
-  target_rank = 0 if piece.color=='red' else board.N-1
+    target_rank = 0 if piece.color=='red' else board.N-1
   
-  location=(target_rank,0)
+    location=(target_rank,0)
   
-  neighbours=[(target_rank,i) for i in range(N)]
+    neighbours=[(target_rank,i) for i in range(N)]
   
-  steps=0
+    steps=0
   
-  for it in range(N**2):
-      for (j,i) in neighbours:
-          squares[j,i]=steps
-          if (j,i)==piece.location:
-              return squares[j,i]
+    for it in range(N**2):
+        for (j,i) in neighbours:
+            squares[j,i]=steps
+            if (j,i)==piece.location:
+                return squares[j,i]
       
-      neighbours=[
-          target
-          for (jj,ii) in neighbours
-          for direction,  target in [ (UP,(jj-1,ii)),(DOWN,(jj+1,ii)),(LEFT,(jj,ii-1)),(RIGHT,(jj,ii+1))]
-          if canMove(M, walls, jj, ii, direction)
-          if squares[target] is None
-      ]
+        neighbours=[
+            target
+            for (jj,ii) in neighbours
+            for direction,  target in [ (UP,(jj-1,ii)),(DOWN,(jj+1,ii)),(LEFT,(jj,ii-1)),(RIGHT,(jj,ii+1))]
+            if canMove(M, walls, jj, ii, direction)
+            if squares[target] is None
+        ]
       
-      neighbours=list(set(neighbours)) # remove dupes
-      steps+=1
+        neighbours=list(set(neighbours)) # remove dupes
+        steps+=1
       
-  assert 0, "no way out"
+    assert 0, "no way out"
   
+  
+try:
+    from .compiled.speedups import stepsToEscape
+except ImportError:
+    stepsToEscape=_stepsToEscape
