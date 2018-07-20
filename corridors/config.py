@@ -8,3 +8,6 @@ def configureLogging():
         format='%(asctime)s %(threadName)22s %(name)18s: %(message)s',
         stream=sys.stdout,
     )
+    
+    
+USE_SPEEDUPS=True

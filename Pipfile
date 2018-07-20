@@ -16,6 +16,7 @@ numpy = "*"
 ipython = "*"
 pytest = "*"
 "flake8" = "*"
+"2060818" = {path = "/home/trevor/code/corridors/cython"}
 
 
 [requires]

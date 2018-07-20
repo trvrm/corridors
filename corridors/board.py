@@ -14,8 +14,8 @@ from . import balanced_ternary
 
 from attr.validators import instance_of
 
-from .movement import UP,DOWN, LEFT,RIGHT, canMove
-
+from .movement import UP,DOWN, LEFT,RIGHT, canEscape
+from .movement import EMPTY,HORIZONTAL,VERTICAL
     
 def defaultDrawnGrid(N):
     characters=np.full((N*2,N*4)," ")
@@ -83,10 +83,6 @@ def perpendicular(d1,d2):
     else:
         return d2 in ['up','down']
         
-EMPTY      = 0
-HORIZONTAL = 1
-VERTICAL   = -1
-
 
 HOP_COMMANDS = [
     ['hop', 'up', 'up'],
@@ -304,28 +300,8 @@ class Board:
     
     
     def canEscape(self,piece):
-        walls = self.walls
-        checked_squares = set()
-        N = self.N
-        M = N-1
-        def inner(location, target_rank):
-            j = location[0]
-            i = location[1]
-            if j==target_rank:              return True
-            
-            if location in checked_squares: return False
-            checked_squares.add(location)
-            
-            for direction, target in ( (UP,(j-1,i)),(DOWN,(j+1,i)),(LEFT,(j,i-1)),(RIGHT,(j,i+1))):
-                if target not in checked_squares:
-                    if canMove(M, walls,j,i,direction):
-                        if inner(target,target_rank):
-                            return True
-            return  False
-
-        target_rank     = 0 if piece.color=='red' else N-1
+        return canEscape(self,piece)
         
-        return inner(piece.location,target_rank)
       
       
         

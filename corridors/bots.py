@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import numpy as np
 import functools
 import random
@@ -21,7 +22,7 @@ class BaseBot:
     def __json__(self):
         return {
             "type":str(type(self)),
-            "name":self.name
+            "name":getattr(self,'name','unnamed')
         }
     
     def evaluate(self,board):
@@ -84,3 +85,57 @@ class StepsBot2(BaseBot):
         r  = 0.5+  stepsToEscape(board,board.red)
         b  = 0.5+  stepsToEscape(board,board.blue)
         return b/r -1 if r<b else 1 -(r/b)
+
+
+class AlphaBetaBot(BaseBot):
+    '''
+        Way better!
+    '''
+    def __init__(self,evalBot,maxDepth=1):
+        self.maxDepth=maxDepth
+        self.evalBot = evalBot
+        
+    def alphabeta(self, board,depth, α, β):
+        
+        if depth==0:
+            return self.evalBot.evaluate (board)
+
+        if board.gameOver():
+            return self.evalBot.evaluate (board)
+
+        commands      = list(board.allLegalCommands())
+        children      = [board.apply(command) for command in commands]
+        
+        if board.turn=='red':
+            v= -INFINITY
+            for command in commands:
+                child = board.apply(command)
+                score = self.alphabeta(child,depth-1,α,β)
+                v = max(v, score)
+                α = max(α,v)
+                if β<=α: break
+            return v
+        else: # blue
+            v= + INFINITY
+            for command in commands:
+                child = board.apply(command)
+                score = self.alphabeta (child,depth-1,α,β)
+                v = min(v, score)
+                β = min(β,v)
+                if β<=α: break
+            return v
+
+    
+    def evaluate(self,board):
+        #print('AB evaluate max depth = {}'.format(self.maxDepth))
+        score = self.alphabeta(board, self.maxDepth,-INFINITY,INFINITY)
+        return score
+        
+    '''    
+    def __call__(self,board):
+        
+        commands      = list(board.allLegalCommands())
+        children      = [applyCommand(board,command) for command in commands]
+        
+        
+        return command'''

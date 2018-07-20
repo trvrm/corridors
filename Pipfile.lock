@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "5e852a7c127a2b39437794344c65d25d29e4492f688197700a24be2a7cfeba2e"
+            "sha256": "323c107999a80603d80227e4d2cf0749f9e930768987ec85b36a7aaff569a949"
         },
         "host-environment-markers": {
             "implementation_name": "cpython",
@@ -150,6 +150,9 @@
         }
     },
     "develop": {
+        "2060818": {
+            "path": "/home/trevor/code/corridors/cython"
+        },
         "atomicwrites": {
             "hashes": [
                 "sha256:a24da68318b08ac9c9c45029f4a10371ab5b20e4226738e150e6e7c571630ae6",
@@ -223,10 +226,10 @@
         },
         "parso": {
             "hashes": [
-                "sha256:8105449d86d858e53ce3e0044ede9dd3a395b1c9716c696af8aa3787158ab806",
-                "sha256:d250235e52e8f9fc5a80cc2a5f804c9fefd886b2e67a2b1099cf085f403f8e33"
+                "sha256:895c63e93b94ac1e1690f5fdd40b65f07c8171e3e53cbd7793b5b96c0e0a7f24",
+                "sha256:35704a43a3c113cce4de228ddb39aab374b8004f4f2407d070b6a2ca784ce8a2"
             ],
-            "version": "==0.3.0"
+            "version": "==0.3.1"
         },
         "pexpect": {
             "hashes": [
