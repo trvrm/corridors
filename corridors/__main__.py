@@ -45,7 +45,7 @@ async def handle_new_game(ws,who):
     
     
     if 'bot'==who:
-        game.players['blue']=bots.AlphaBetaBot(bots.StepsBot2())
+        game.players['blue']=bots.AlphaBetaBot(bots.StepsBot2(),maxDepth=2)
         
     
     ws.game=game

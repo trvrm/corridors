@@ -18,16 +18,18 @@ def timed():
      
 
 def test_speed():
-    
+    '''
+        I recall this should take about 30 seconds.
+        I'm not sure why it's taking much longer.
+    '''
     with timed():
         b=corridors.board.Board()
-        sbot=corridors.bots.StepsBot2()
-        bot=corridors.bots.AlphaBetaBot(sbot)
+        evalbot=corridors.bots.StepsBot2()
+        bot=corridors.bots.AlphaBetaBot(evalbot,maxDepth=1)
         
-        for i in range(5):
-            move=bot(b)
-            print(move)
-            b(*move)
+        move=bot(b)
+        print(move)
+
             
 if __name__=='__main__':
     

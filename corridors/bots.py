@@ -4,7 +4,7 @@ import functools
 import random
 import datetime
 import logging
-
+from .utilities import timed
 from .movement import stepsToEscape
 
 now=datetime.datetime.now
@@ -98,44 +98,69 @@ class AlphaBetaBot(BaseBot):
     def alphabeta(self, board,depth, α, β):
         
         if depth==0:
-            return self.evalBot.evaluate (board)
+            return self.evalBot.evaluate (board), None
 
         if board.gameOver():
-            return self.evalBot.evaluate (board)
+            return self.evalBot.evaluate (board), None
 
         commands      = list(board.allLegalCommands())
         children      = [board.apply(command) for command in commands]
         
         if board.turn=='red':
             v= -INFINITY
+            best_command = commands[0]
             for command in commands:
                 child = board.apply(command)
-                score = self.alphabeta(child,depth-1,α,β)
-                v = max(v, score)
+                score,_ = self.alphabeta(child,depth-1,α,β)
+                
+                if score > v:
+                    v=score
+                    best_command=command
+                #v = max(v, score)  # which command gives us this?
                 α = max(α,v)
                 if β<=α: break
-            return v
+            return v, best_command
         else: # blue
             v= + INFINITY
+            best_command = commands[0]
             for command in commands:
                 child = board.apply(command)
-                score = self.alphabeta (child,depth-1,α,β)
-                v = min(v, score)
+                score,_ = self.alphabeta (child,depth-1,α,β)
+                
+                if score < v:
+                    v=score
+                    best_command = command
+                #v = min(v, score)
                 β = min(β,v)
                 if β<=α: break
-            return v
+            return v, best_command
 
     
     def evaluate(self,board):
-        #print('AB evaluate max depth = {}'.format(self.maxDepth))
+        assert 0
+        print('AB evaluate max depth = {}'.format(self.maxDepth))
         score = self.alphabeta(board, self.maxDepth,-INFINITY,INFINITY)
         return score
         
-    '''    
+    def complexity(self,board):
+        cmds = list(board.allLegalCommands())
+        cmds2= list(board.apply(cmds[0]).allLegalCommands())
+        return len(cmds)+len(cmds2)
+        
     def __call__(self,board):
         
-        commands      = list(board.allLegalCommands())
-        children      = [applyCommand(board,command) for command in commands]
+        
+        maxDepth = 3
+        
+        complexity = self.complexity(board)
+        
+        if complexity < 80: maxDepth=4 
+        
+        logging.info(f"AlphaBetaBot.__call__, maxDepth:{maxDepth}, complexity: {complexity}")
+        with timed():
+            score, command = self.alphabeta(board,maxDepth,-INFINITY,INFINITY)
+        
+        logging.info(f"score:{score}, command: {command}")
         
         
-        return command'''
+        return command

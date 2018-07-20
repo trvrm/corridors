@@ -2,6 +2,7 @@ from setuptools import setup, Extension
 
 from Cython.Distutils import build_ext
 
+from Cython.Build import cythonize
 import Cython.Compiler.Options
 Cython.Compiler.Options.annotate = True
 
@@ -10,7 +11,7 @@ ext_modules = [
         'corridors.speedups',
         [
             "cython/speedups.pyx"
-        ]
+        ],
     )
 ]
 

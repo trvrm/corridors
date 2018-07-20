@@ -1,6 +1,19 @@
 import functools
 import uuid
 import json
+import datetime
+import contextlib
+import logging
+
+@contextlib.contextmanager
+def timed():
+    start=datetime.datetime.now()
+    try:
+        yield  
+    finally:
+        duration=datetime.datetime.now()-start
+        logging.info(duration)
+        
 def default_encoder(thing):
     if isinstance(thing,uuid.UUID):
         return str(thing)

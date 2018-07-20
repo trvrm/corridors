@@ -1,7 +1,14 @@
 # coding: utf-8
+# cython: profile=True
+
+'''
+    Currently getting a 6x speedup, not nearly enough!
+'''
 cimport cython
 
 import numpy as np
+
+
 DTYPE = np.intc
 
  
@@ -73,7 +80,7 @@ def canEscape(board,piece):
     return bool(inner(piece.location,target_rank, checked_squares,M, walls_view))
   
   
-  
+
 
 @cython.boundscheck(False)  # Deactivate bounds checking
 @cython.wraparound(False)   # Deactivate negative indexing.
@@ -90,11 +97,13 @@ def stepsToEscape(board,piece):
     
     cdef int target_rank = 0 if piece.color=='red' else N-1
     
+    # Is there a faster data type I can use here?
     cdef set neighbours={(target_rank,i) for i in range(N)}
     
     cdef int steps=0
     
     location=piece.location
+    cdef list directions= [UP,DOWN,LEFT,RIGHT]
     
     for it in range(N**2):
         for (j,i) in neighbours:
@@ -112,19 +121,7 @@ def stepsToEscape(board,piece):
             if (squares[tj,ti]) == unchecked
         }
         
-        
         steps+=1
         
     assert 0, "no way out"
     
-    
-'''
-    Fundamentally I'm writing a flood-fill algorithm, starting from every square in the top/bottom row, 
-    and going until I find the target square.
-    
-    Would it be faster or slower to work from the piece out rather than the edge in?
-    
-    
-    
-    
-'''
