@@ -126,19 +126,23 @@ def boardCommands(boardSize):
     
     
 class Board:
-    def __init__(self,boardSize=9, wallsPerPiece=10):
+    def __init__(self):
         '''
             The wall grid is the grid of intersections of the wall slots, so is 8x8.
             The movement grid is the grid of squares, so 9x9
             (Assuming standard size board)
         '''
-        self.N = self.boardSize = boardSize
-        self.wallsPerPiece      = wallsPerPiece
+        self.N = self.boardSize = 9
+        self.wallsPerPiece      = 10
         self.reset()
+        
+        # set this to false e.g. in tree searches when we know 
+        # we're only applying valid commands
+        self.do_checks=True
         
     def __hash__(self):
         walls = balanced_ternary.decode(self.walls.flatten())
-        return hash((self.N,self.wallsPerPiece, self.red, self.blue, self.turn, walls))
+        return hash((self.red, self.blue, self.turn, walls))
         
     def reset(self):
         N               = self.N
@@ -149,7 +153,7 @@ class Board:
         self.blue       = Piece('blue',location=(0,i), N=N, walls=self.wallsPerPiece)
 
         self.turn       ='red'
-        self.history    = []
+        #self.history    = []
         
     def __json__(self):
         return{
@@ -179,27 +183,16 @@ class Board:
             (self.turn==other.turn)
         ])
     
-    def invariant(self):
-        assert np.count_nonzero(self.walls) +(self.red.walls+self.blue.walls) == self.wallsPerPiece*2
-        
-    def toArray(self):
-        
-        return np.concatenate([
-            self.walls.flatten(),
-            np.array(self.red.location),
-            np.array(self.blue.location),
-            np.array([self.red.walls,self.blue.walls]),
-            np.array([self.turn=='blue']),
-            np.array([self.wallsPerPiece])
-        ])
+    
     def __deepcopy__(self,memo):
-        '''
-            This is now becoming a bottleneck.
-        '''
-        # significantly faster!
-        board = arrayToBoard(self.toArray())
-        # I'm ok doing this because the tuples in the list are immutable!
-        board.history=copy.copy(self.history)
+        
+        board=Board()
+        board.walls=self.walls.copy()
+        board.red.location=self.red.location
+        board.blue.location=self.blue.location
+        board.red.walls=self.red.walls
+        board.blue.walls=self.blue.walls
+        board.turn=self.turn
         return board
 
     def gameOver(self):
@@ -209,12 +202,7 @@ class Board:
         if self.red.hasWon():return 'red'
         if self.blue.hasWon():return 'blue'
     
-    def debug(self):
-
-        print('HISTORY:')
-        print(self.history)
-        print("toArray:")
-        print(list(self.toArray()))
+    
         
     def info(self):
         
@@ -347,9 +335,10 @@ class Board:
         color   = self.turn
         piece   = getattr(self,color)
         
-        ruleCheck(piece.walls>0, "No walls left")
-        ruleCheck(self.legalWall(location,orientation), "illegal wall at {}: {}".format(location,orientation))
-        ruleCheck(self.escapableWall(location,orientation),"trapping wall at {}: {}".format(location,orientation))
+        if self.do_checks:
+            ruleCheck(piece.walls>0, "No walls left")
+            ruleCheck(self.legalWall(location,orientation), "illegal wall at {}: {}".format(location,orientation))
+            ruleCheck(self.escapableWall(location,orientation),"trapping wall at {}: {}".format(location,orientation))
         
         self.walls[location]=orientation
         piece.walls-=1
@@ -369,10 +358,11 @@ class Board:
         
         piece = getattr(self,color)
         
-        ruleCheck(
-            self.legalHop(piece.location,d1,d2),
-            "illegal hop for {}: {} {}".format(color,d1,d2)
-        )
+        if self.do_checks:
+            ruleCheck(
+                self.legalHop(piece.location,d1,d2),
+                "illegal hop for {}: {} {}".format(color,d1,d2)
+            )
         # if it's legal...
         piece.location = locationFromDirection(piece.location,d1)
         piece.location = locationFromDirection(piece.location,d2)
@@ -387,10 +377,11 @@ class Board:
         color=self.turn
         piece = getattr(self,color)
 
-        ruleCheck(
-            self.legalMove(piece.location,direction),
-            "illegal move for {}: {}".format(color,direction)
-        )
+        if self.do_checks:
+            ruleCheck(
+                self.legalMove(piece.location,direction),
+                "illegal move for {}: {}".format(color,direction)
+            )
         
         piece.location = locationFromDirection(piece.location,direction)
         
@@ -425,35 +416,18 @@ class Board:
         return False
     
     def __call__(self,*command):
-        if self.gameOver(): BrokenRule( "Game over, dude!")
-        self.invariant()
         action=command[0]
-        assert action in ('move','hwall','vwall','hop'),action
-        if not self.legalCommand(command):
-            raise BrokenRule("Illegal command: {}".format(command))
+        
+        if self.do_checks:
+            if self.gameOver(): BrokenRule( "Game over, dude!")
+            assert action in ('move','hwall','vwall','hop'),action
+            if not self.legalCommand(command):
+                raise BrokenRule("Illegal command: {}".format(command))
+                
         fn=getattr(self,'_'+action)
         fn(*command[1:])
         self._endTurn()
-        self.history.append(command)
-        self.invariant()
         
-        
-    def apply(self, command):
-        '''
-            unlike __call__, this creates a COPY 
-            rather than modifying the underlying object.
-        '''
-        clone = copy.deepcopy(self)
-        clone(*command)
-        return clone
-
-    def children(self):
-        '''
-            for use in constructing game trees
-        '''
-        for command in self.allLegalCommands():
-            yield self.apply(command)
-
         
     def __repr__(self):
         
@@ -495,21 +469,7 @@ class Board:
             if self.legalCommand(command)
         )
 
-def arrayToBoard(a):
-    M=int(np.sqrt(len(a)-8))
-    N=M+1
-    wallsPerPiece=a[-1]
-    
-    assert M*M+8==len(a)
-    board=Board(N,wallsPerPiece)
-    board.walls=a[0:-8].reshape((M,M)).astype(np.int32)
-    board.red.location = tuple(a[-8:-6])
-    board.blue.location= tuple(a[-6:-4])
-    board.red.walls    = a[-4]
-    board.blue.walls   = a[-3]
-    board.turn         ='blue' if a[-2] else 'red'
-    return board
-    
+
     
     
     

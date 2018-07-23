@@ -1,9 +1,9 @@
-# -*- coding: utf-8 -*-
 import numpy as np
 import functools
 import random
 import datetime
 import logging
+import copy
 from .utilities import timed
 from .movement import stepsToEscape
 
@@ -11,8 +11,16 @@ now=datetime.datetime.now
 INFINITY=float('inf')
 
 
-def applyCommand(board,command):
-    return board.apply(command)
+def apply_command(board,command):
+    '''
+        assumes command is legal
+    '''
+    clone = copy.deepcopy(board)
+    clone.do_checks=False
+    clone(*command)
+    
+    return clone
+    
     
 class BaseBot:
     def __str__(self):
@@ -40,7 +48,7 @@ class BaseBot:
             Must return a legal command
         '''
         commands      = list(board.allLegalCommands())
-        positions     = [applyCommand(board,command) for command in commands]
+        positions     = [apply_command(board,command) for command in commands]
         scores        = [self.evaluate(position) for position in positions]
         
         commandScores = list(zip(commands,scores))
@@ -92,10 +100,11 @@ class DumbBot(BaseBot):
         if board.red.hasWon(): return INFINITY
         if board.blue.hasWon():return -INFINITY
         
-        rj,ri=board.red.location
-        bj,bi=board.blue.location
+        red_distance=(board.red.location[0]-0)
+        blue_distance=(8-board.blue.location[0])
         
-        return bj-rj
+        return blue_distance-red_distance
+        
 
 class AlphaBetaBot(BaseBot):
     '''
@@ -114,13 +123,13 @@ class AlphaBetaBot(BaseBot):
             return self.evalBot.evaluate (board), None
 
         commands      = list(board.allLegalCommands())
-        children      = [board.apply(command) for command in commands]
+        children      = [apply_command(board,command) for command in commands]
         
         if board.turn=='red':
             v= -INFINITY
             best_command = commands[0]
             for command in commands:
-                child = board.apply(command)
+                child = apply_command(board,command)
                 score,_ = self.alphabeta(child,depth-1,α,β)
                 
                 if score > v:
@@ -134,7 +143,7 @@ class AlphaBetaBot(BaseBot):
             v= + INFINITY
             best_command = commands[0]
             for command in commands:
-                child = board.apply(command)
+                child = apply_command(board,command)
                 score,_ = self.alphabeta (child,depth-1,α,β)
                 
                 if score < v:
@@ -154,7 +163,7 @@ class AlphaBetaBot(BaseBot):
         
     def complexity(self,board):
         cmds = list(board.allLegalCommands())
-        cmds2= list(board.apply(cmds[0]).allLegalCommands())
+        cmds2= list(apply_command(board,cmds[0]).allLegalCommands())
         return len(cmds)+len(cmds2)
         
     def __call__(self,board):

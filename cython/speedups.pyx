@@ -21,6 +21,9 @@ cdef int DOWN  = 1
 cdef int LEFT  = 2
 cdef int RIGHT = 3
 
+
+SHAPE_N=(9,9)
+
 @cython.boundscheck(False)  # Deactivate bounds checking
 @cython.wraparound(False)   # Deactivate negative indexing.
 cdef inline int canMove(int [:, :] walls,Py_ssize_t j, Py_ssize_t i, int direction):
@@ -96,24 +99,23 @@ cdef inline int _canEscape(Py_ssize_t j, Py_ssize_t i, int target_rank,int [:, :
     return False
 
 
+
+
 def canEscape(board,piece):
     cdef int N = 9
-
     cdef int [:, :] walls_view = board.walls #.astype(np.int32)
-    #cdef checked_squares = set()
-    # could be a numpy grid
     cdef int unchecked = 0
-    
-    cdef int [:, :] checked_squares = np.full((N,N),unchecked, dtype=DTYPE)
-    
+    cdef int [:, :] checked_squares = np.full(SHAPE_N,unchecked, dtype=DTYPE)
     cdef int target_rank     = 0 if piece.color=='red' else N-1
     
-    cdef int j=piece.location[0]
-    cdef int i=piece.location[1]
+    cdef Py_ssize_t j=piece.location[0]
+    cdef Py_ssize_t i=piece.location[1]
     
     return bool(_canEscape(j,i,target_rank, checked_squares, walls_view))
   
   
+
+
 
 
 @cython.boundscheck(False)  # Deactivate bounds checking
