@@ -1,5 +1,5 @@
 # coding: utf-8
-# cython: profile=True
+# cython: profile=False
 
 '''
     Currently getting a 6x speedup, not nearly enough!
@@ -23,7 +23,8 @@ cdef int RIGHT = 3
 
 @cython.boundscheck(False)  # Deactivate bounds checking
 @cython.wraparound(False)   # Deactivate negative indexing.
-cdef inline int canMove(int M,int [:, :] walls,Py_ssize_t j, Py_ssize_t i, int direction):
+cdef inline int canMove(int [:, :] walls,Py_ssize_t j, Py_ssize_t i, int direction):
+    cdef int M=8
     if UP==direction:
         if j==0: return 0
         if i>0:
@@ -54,30 +55,63 @@ cdef inline int canMove(int M,int [:, :] walls,Py_ssize_t j, Py_ssize_t i, int d
     
     return 1 
 
-cdef int inner(tuple location, int target_rank,set checked_squares,int M, int [:, :] walls):
+
+
+@cython.boundscheck(False)  # Deactivate bounds checking
+@cython.wraparound(False)   # Deactivate negative indexing.
+cdef inline int _canEscape(Py_ssize_t j, Py_ssize_t i, int target_rank,int [:, :] checked_squares, int [:, :] walls):
+    '''
+        This is now highly optimized
+    '''
+    cdef int N = 9
+    cdef int checked = 1
     
-    cdef int j = location[0]
-    cdef int i = location[1]
-    if j==target_rank:              return True
+    if j<0:return 0
+    if i<0: return 0
+    if i>=N: return 0
+    if j>=N: return 0
     
-    if location in checked_squares: return False
-    checked_squares.add(location)
+    if checked_squares[j,i]:        return 0
+    if j==target_rank:              return 1
     
-    for direction,  target in ( (UP,(j-1,i)),(DOWN,(j+1,i)),(LEFT,(j,i-1)),(RIGHT,(j,i+1))):
-        if target not in checked_squares:
-            if canMove(M, walls,j,i,direction):
-                if inner(target,target_rank,checked_squares,M,walls):
-                    return True
-    return  False
+    
+    checked_squares[j,i]=checked
+    
+    if canMove(walls,j,i,UP):
+        if _canEscape(j-1,i,target_rank,checked_squares,walls):
+            return True
+        
+    if canMove(walls,j,i,DOWN):
+        if _canEscape(j+1,i,target_rank,checked_squares,walls):
+            return True
+        
+    if canMove(walls,j,i,LEFT):
+        if _canEscape(j,i-1,target_rank,checked_squares,walls):
+            return True
+                
+    if canMove(walls,j,i,RIGHT):
+        if _canEscape(j,i+1,target_rank,checked_squares,walls):
+            return True
+        
+    return False
 
 
 def canEscape(board,piece):
-    cdef int N = board.N
+    cdef int N = 9
+
     cdef int [:, :] walls_view = board.walls #.astype(np.int32)
-    cdef checked_squares = set()
+    #cdef checked_squares = set()
+    # could be a numpy grid
+    cdef int unchecked = 0
+    
+    cdef int [:, :] checked_squares = np.full((N,N),unchecked, dtype=DTYPE)
+    
     cdef int target_rank     = 0 if piece.color=='red' else N-1
-    cdef int M = N-1
-    return bool(inner(piece.location,target_rank, checked_squares,M, walls_view))
+    
+    cdef int j=piece.location[0]
+    cdef int i=piece.location[1]
+    
+    return bool(_canEscape(j,i,target_rank, checked_squares, walls_view))
   
   
 
@@ -117,7 +151,7 @@ def stepsToEscape(board,piece):
             (tj,ti)
             for (j,i) in neighbours
             for direction,  (tj,ti) in [ (UP,(j-1,i)),(DOWN,(j+1,i)),(LEFT,(j,i-1)),(RIGHT,(j,i+1))]
-            if canMove(M, walls, j, i, direction)
+            if canMove(walls, j, i, direction)
             if (squares[tj,ti]) == unchecked
         }
         
@@ -147,3 +181,5 @@ def legalWall(int [:, :] walls, int j, int i, int orientation):
         if j<M-1 and walls[j+1,i]==VERTICAL:   return False
     
     return True
+    
+    

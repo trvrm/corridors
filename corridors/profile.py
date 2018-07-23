@@ -23,7 +23,7 @@ def test_speed():
         b=corridors.board.Board()
         #evalbot=corridors.bots.StepsBot2()
         evalbot=corridors.bots.DumbBot()
-        bot=corridors.bots.AlphaBetaBot(evalbot,maxDepth=1)
+        bot=corridors.bots.AlphaBetaBot(evalbot)
         
         move=bot(b)
         print(move)

@@ -57,6 +57,7 @@ class Piece:
         }
 
 def locationFromDirection(location,direction):
+    
     j,i=location
     if 'up'   == direction:   return j-1,i
     if 'down' == direction:   return j+1,i
@@ -192,6 +193,9 @@ class Board:
             np.array([self.wallsPerPiece])
         ])
     def __deepcopy__(self,memo):
+        '''
+            This is now becoming a bottleneck.
+        '''
         # significantly faster!
         board = arrayToBoard(self.toArray())
         # I'm ok doing this because the tuples in the list are immutable!

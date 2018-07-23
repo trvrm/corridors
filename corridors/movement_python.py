@@ -131,3 +131,7 @@ def legalWall(walls,j,i,orientation):
         if j<M-1 and walls[j+1,i]==VERTICAL:   return False
     
     return True
+    
+    
+    
+    
