@@ -87,6 +87,16 @@ class StepsBot2(BaseBot):
         return b/r -1 if r<b else 1 -(r/b)
 
 
+class DumbBot(BaseBot):
+    def evaluate(self,board):
+        if board.red.hasWon(): return INFINITY
+        if board.blue.hasWon():return -INFINITY
+        
+        rj,ri=board.red.location
+        bj,bi=board.blue.location
+        
+        return bj-rj
+
 class AlphaBetaBot(BaseBot):
     '''
         Way better!

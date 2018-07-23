@@ -14,8 +14,10 @@ from . import balanced_ternary
 
 from attr.validators import instance_of
 
+from . import movement
 from .movement import UP,DOWN, LEFT,RIGHT, canEscape
 from .movement import EMPTY,HORIZONTAL,VERTICAL
+
     
 def defaultDrawnGrid(N):
     characters=np.full((N*2,N*4)," ")
@@ -314,23 +316,8 @@ class Board:
     
     def legalWall(self,location,orientation):
         j,i=location
-        M=self.N-1
-        walls=self.walls
-        assert 0<=j<M
-        assert 0<=i<M
-        assert orientation in (HORIZONTAL,VERTICAL), orientation
+        return movement.legalWall(self.walls,j,i,orientation)
         
-        
-        if orientation == HORIZONTAL:
-            if walls[location]:                    return False
-            if i>0   and walls[j,i-1]==HORIZONTAL: return False
-            if i<M-1 and walls[j,i+1]==HORIZONTAL: return False
-        if orientation == VERTICAL:
-            if walls[location]:                    return False
-            if j>0   and walls[j-1,i]==VERTICAL:   return False
-            if j<M-1 and walls[j+1,i]==VERTICAL:   return False
-        
-        return True
     
     def escapableWall(self,location,orientation):
         'put it on, test, take it off!'

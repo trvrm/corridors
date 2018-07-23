@@ -12,6 +12,13 @@ DOWN  = 1
 LEFT  = 2
 RIGHT = 3
 
+
+
+
+
+
+
+
 def canMove(M,walls,  j,   i,   direction):
     if UP==direction:
         if j==0: return 0
@@ -103,3 +110,24 @@ def canEscape(board,piece):
     target_rank     = 0 if piece.color=='red' else N-1
     
     return inner(piece.location,target_rank)
+    
+    
+    
+def legalWall(walls,j,i,orientation):
+    
+    M=8
+    assert 0<=j<M
+    assert 0<=i<M
+    assert orientation in (HORIZONTAL,VERTICAL), orientation
+    
+    
+    if orientation == HORIZONTAL:
+        if walls[location]:                    return False
+        if i>0   and walls[j,i-1]==HORIZONTAL: return False
+        if i<M-1 and walls[j,i+1]==HORIZONTAL: return False
+    if orientation == VERTICAL:
+        if walls[location]:                    return False
+        if j>0   and walls[j-1,i]==VERTICAL:   return False
+        if j<M-1 and walls[j+1,i]==VERTICAL:   return False
+    
+    return True
