@@ -14,12 +14,8 @@ RIGHT = 3
 
 
 
-
-
-
-
-
-def canMove(M,walls,  j,   i,   direction):
+def canMove(walls,  j,   i,   direction):
+    M=8
     if UP==direction:
         if j==0: return 0
         if i>0:

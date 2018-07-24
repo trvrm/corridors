@@ -1,5 +1,6 @@
 # unit tests
 import corridors
+from corridors import config
 import corridors.board
 import corridors.board
 import corridors.utilities
@@ -21,8 +22,8 @@ def test_speed():
 
     with timed():
         b=corridors.board.Board()
-        #evalbot=corridors.bots.StepsBot2()
-        evalbot=corridors.bots.DumbBot()
+        evalbot=corridors.bots.StepsBot2()
+        #evalbot=corridors.bots.DumbBot()
         bot=corridors.bots.AlphaBetaBot(evalbot)
         
         move=bot(b)
@@ -30,5 +31,5 @@ def test_speed():
 
             
 if __name__=='__main__':
-    
+    config.configureLogging()
     test_speed()

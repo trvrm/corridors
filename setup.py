@@ -12,6 +12,7 @@ ext_modules = [
         [
             "cython/speedups.pyx"
         ],
+        language="c++",
     )
 ]
 
