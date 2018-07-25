@@ -4,6 +4,7 @@ import random
 import datetime
 import logging
 import copy
+import math
 from .utilities import timed
 from .movement import stepsToEscape, canMove, UP,DOWN
 
@@ -111,39 +112,32 @@ class StepsBot2(BaseBot):
         b  = 0.5+  stepsToEscape(board,board.blue)
         return b/r -1 if r<b else 1 -(r/b)
     
+    
+    
 class StepsBot3(BaseBot):
     def evaluate(self,board):
-        '''
-            +ve = good red position, i.e. short distance for red, long for blue'
-            I want this to take into account who's move it is, because that really changes things.
-            
-        '''
+        
+        WEIGHT=0.1
         N=board.N
-        if board.red.hasWon(): return INFINITY
-        if board.blue.hasWon():return -INFINITY
         
-        # This shortcut seems to make a big difference.
-        if board.turn=='red':
-            j,i=board.red.location
-            if j==1:
-                if canMove(board.walls,j,i,UP):
-                    return INFINITY
+        def _evaluate(red_distance,blue_distance,red_to_play):
+            if red_to_play:
+                blue_distance+=1
+            else:
+                red_distance+=1
             
-        if board.turn=='blue':
-            j,i=board.blue.location
-            if j==(N-2):
-                if canMove(board.walls,j,i,DOWN):
-                    return -INFINITY
+            blue_distance=math.log(1+blue_distance)
+            red_distance=math.log(1+red_distance)
+            return blue_distance-red_distance
 
-        r  = stepsToEscape(board,board.red)
-        b  = stepsToEscape(board,board.blue)
         
-        if board.turn=='red':
-            r-=0.5
-        if board.turn=='blue':
-            b-=0.5
-        
-        return b-r
+        wallScore     = math.log(1+board.red.walls)-math.log(1+board.blue.walls)
+        return _evaluate(
+            stepsToEscape(board,board.red),
+            stepsToEscape(board,board.blue),
+            board.turn=='red'
+        )+WEIGHT*wallScore
+    
 
 
 class DumbBot(BaseBot):
@@ -160,10 +154,8 @@ class DumbBot(BaseBot):
         
 
 class AlphaBetaBot(BaseBot):
-    '''
-        Way better!
-    '''
-    MAX_AB_CALLS=1000
+    
+    MAX_AB_CALLS=10000
     def __init__(self,evalBot,maxDepth=1):
         self.maxDepth=maxDepth
         self.evalBot = evalBot
@@ -183,7 +175,6 @@ class AlphaBetaBot(BaseBot):
 
         self.ab_calls+=1
         
-        
         commands      = list(board.allLegalCommands())
         children      = [apply_command(board,command) for command in commands]
         
@@ -202,7 +193,7 @@ class AlphaBetaBot(BaseBot):
                 if β<=α: break
                 
                 if self.ab_calls>= AlphaBetaBot.MAX_AB_CALLS:
-                    print('max ab calls')
+                    logging.warning('max ab calls')
                     break
                 
             return v, best_command
@@ -220,7 +211,7 @@ class AlphaBetaBot(BaseBot):
                 β = min(β,v)
                 if β<=α: break
                 if self.ab_calls>= AlphaBetaBot.MAX_AB_CALLS:
-                    print('max ab calls')
+                    logging.warning('max ab calls')
                     break
             return v, best_command
 
@@ -232,8 +223,8 @@ class AlphaBetaBot(BaseBot):
         
         self.ab_calls=0
         maxDepth = 3
-        eval_bot_name = type(self.evalBot)
-        logging.info(f"AlphaBetaBot({eval_bot_name}).__call__, maxDepth:{maxDepth}")
+        
+        logging.info(f"{self}.__call__(), maxDepth:{maxDepth}")
         with timed():
             score, command = self.alphabeta(board,maxDepth,-INFINITY,INFINITY)
         
