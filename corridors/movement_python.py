@@ -72,7 +72,7 @@ def stepsToEscape(board,piece):
             target
             for (jj,ii) in neighbours
             for direction,  target in [ (UP,(jj-1,ii)),(DOWN,(jj+1,ii)),(LEFT,(jj,ii-1)),(RIGHT,(jj,ii+1))]
-            if canMove(M, walls, jj, ii, direction)
+            if canMove(walls, jj, ii, direction)
             if squares[target] is None
         ]
       
@@ -98,7 +98,7 @@ def canEscape(board,piece):
         
         for direction, target in ( (UP,(j-1,i)),(DOWN,(j+1,i)),(LEFT,(j,i-1)),(RIGHT,(j,i+1))):
             if target not in checked_squares:
-                if canMove(M, walls,j,i,direction):
+                if canMove(walls,j,i,direction):
                     if inner(target,target_rank):
                         return True
         return  False
@@ -118,11 +118,11 @@ def legalWall(walls,j,i,orientation):
     
     
     if orientation == HORIZONTAL:
-        if walls[location]:                    return False
+        if walls[j,i]:                         return False
         if i>0   and walls[j,i-1]==HORIZONTAL: return False
         if i<M-1 and walls[j,i+1]==HORIZONTAL: return False
     if orientation == VERTICAL:
-        if walls[location]:                    return False
+        if walls[j,i]:                         return False
         if j>0   and walls[j-1,i]==VERTICAL:   return False
         if j<M-1 and walls[j+1,i]==VERTICAL:   return False
     
