@@ -1,6 +1,7 @@
 This is designed to be used within a pipenv environment.
 
 ```
+sudo apt install libboost-dev 
 pipenv install
 ```
 or 
