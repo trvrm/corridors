@@ -1,5 +1,7 @@
 # unit tests
-import corridors
+'''
+    pipenv run python -m pytest tests
+'''
 import corridors.board
 import corridors.utilities
 

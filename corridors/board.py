@@ -1,8 +1,5 @@
 # coding: utf-8
-'''
-    I haven't brought over my cython-optimized speedups from the 
-    original code base, just to keep things simple.
-'''
+
 import numpy as np
 import attr
 import copy
@@ -239,9 +236,7 @@ class Board:
         
         
     def legalMove(self,location,direction, checkPieces=True):
-        '''
-            Probably the best place to look for speedups
-        '''
+        
         j,i=location
         N=self.N
         M=N-1

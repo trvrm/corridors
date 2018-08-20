@@ -11,7 +11,3 @@ def configureLogging():
     
     
     
-# One of cython, pybind, none
-SPEEDUPS=''
-SPEEDUPS='cython'
-#SPEEDUPS='cython'

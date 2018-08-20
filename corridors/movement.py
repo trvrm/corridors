@@ -5,11 +5,6 @@ from . import config
 from .movement_python import EMPTY, HORIZONTAL,VERTICAL,UP,DOWN,LEFT,RIGHT
 
 
-if config.SPEEDUPS=='cython':
-    from .speedups import stepsToEscape, canEscape, legalWall, canMove
-    
-    print('speedups installed')
-else:
-    from .movement_python import stepsToEscape, canEscape, legalWall, canMove
-    
-    print('no speedups installed')
+from .movement_python import stepsToEscape, canEscape, legalWall, canMove
+
+print('no speedups installed')

@@ -124,9 +124,12 @@ double StepsBot2::evaluate(const Board& board) const{
 
 
 double StepsBot3::evaluate(const Board& board) const{
-    const double WEIGHT=0.1;
+    // const double WEIGHT=0.1;
     
-    double wall_score = log(1+board.red.walls) - log(1+board.blue.walls);
+    //I want it allergic to a very high wall diff
+    double diff = (board.red.walls-board.blue.walls)/4;
+    double wall_score = diff*diff*diff; // how do we cube stuff in C++
+    
     
     uint red_distance  = 1+stepsToEscape(board,board.red);
     uint blue_distance = 1+stepsToEscape(board,board.blue);
@@ -136,7 +139,8 @@ double StepsBot3::evaluate(const Board& board) const{
     else
         red_distance+=1;
     double difference = log(blue_distance)-log(red_distance);
-    return difference+ (WEIGHT*wall_score);
+    
+    return difference+ wall_score;
 }
 
 
