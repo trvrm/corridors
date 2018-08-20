@@ -8,7 +8,6 @@ import attr
 import copy
 import functools
 import datetime
-from enum import Enum
 
 from . import balanced_ternary
 
@@ -254,8 +253,6 @@ class Board:
         if (j>=M)        and (direction=='down'):  return False
         if (i==0)        and (direction=='left'):  return False
         if (i>=M)        and (direction=='right'): return False
-        
-        
         
         # check piece location
         

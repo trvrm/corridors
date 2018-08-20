@@ -10,14 +10,13 @@ name = "pypi"
 aiohttp = "*"
 numpy = "*"
 tqdm = "*"
-
+pybind11 = "*"
 
 [dev-packages]
 
 ipython = "*"
 pytest = "*"
 "flake8" = "*"
-"2060818" = {path = "/home/trevor/code/corridors/cython"}
 
 
 [requires]

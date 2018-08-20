@@ -176,7 +176,6 @@ class AlphaBetaBot(BaseBot):
         self.ab_calls+=1
         
         commands      = list(board.allLegalCommands())
-        children      = [apply_command(board,command) for command in commands]
         
         if board.turn=='red':
             v= -INFINITY
@@ -234,4 +233,4 @@ class AlphaBetaBot(BaseBot):
         return command
         
         
-        
+

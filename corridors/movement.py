@@ -3,7 +3,9 @@ import numpy as np
 from . import config
 
 from .movement_python import EMPTY, HORIZONTAL,VERTICAL,UP,DOWN,LEFT,RIGHT
-if config.USE_SPEEDUPS:
+
+
+if config.SPEEDUPS=='cython':
     from .speedups import stepsToEscape, canEscape, legalWall, canMove
     
     print('speedups installed')

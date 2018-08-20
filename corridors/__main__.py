@@ -13,7 +13,7 @@ from . import config
 from . import utilities
 
 from . import bots
-
+from . import cpp_bots
 from .game import Game
 from .user import User
 from .board import locationFromDirection, hopTarget
@@ -36,6 +36,7 @@ def handle(name):
         return func
     return wrapper
     
+    
 
 @handle('new_game')
 async def handle_new_game(ws,who):
@@ -45,10 +46,10 @@ async def handle_new_game(ws,who):
     
     
     if 'bot'==who:
-        game.players['blue']=bots.AlphaBetaBot(bots.StepsBot3())
+        #game.players['blue']=bots.AlphaBetaBot(bots.StepsBot3())
         #game.players['blue']=bots.StepsBot2()
         #game.players['blue']=bots.AlphaBetaBot(bots.DumbBot())
-        
+        game.players['blue']=cpp_bots.CPPAlphaBetaBot()
     
     ws.game=game
     shared.games.append(game)
