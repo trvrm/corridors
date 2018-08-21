@@ -2,7 +2,6 @@
 import corridors
 from corridors import config
 import corridors.board
-import corridors.board
 import corridors.utilities
 import corridors.bots
 import corridors.movement

@@ -1,7 +1,5 @@
 import numpy as np
 
-from . import config
-
 EMPTY = 0
 HORIZONTAL = 1
 VERTICAL = -1
@@ -60,13 +58,11 @@ def canMove(walls, j, i, direction):
 
 def stepsToEscape(board, piece):
     N = board.N
-    M = N - 1
+    
     walls = board.walls
     squares = np.full((N, N), None)
 
     target_rank = 0 if piece.color == "red" else board.N - 1
-
-    location = (target_rank, 0)
 
     neighbours = [(target_rank, i) for i in range(N)]
 
@@ -101,8 +97,7 @@ def canEscape(board, piece):
     walls = board.walls
     checked_squares = set()
     N = board.N
-    M = N - 1
-
+    
     def inner(location, target_rank):
         j = location[0]
         i = location[1]
