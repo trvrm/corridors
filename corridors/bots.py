@@ -6,7 +6,7 @@ import logging
 import copy
 import math
 from .utilities import timed
-from .movement import stepsToEscape, canMove, UP,DOWN
+from .movement import stepsToEscape, canMove
 
 now=datetime.datetime.now
 INFINITY=float('inf')
@@ -154,7 +154,10 @@ class DumbBot(BaseBot):
         
 
 class AlphaBetaBot(BaseBot):
-    
+    '''
+        This has been entirely re-written in C++, which is WAY faster.
+        
+    '''
     MAX_AB_CALLS=10000
     def __init__(self,evalBot,maxDepth=1):
         self.maxDepth=maxDepth

@@ -6,12 +6,10 @@ import copy
 import functools
 import datetime
 
-from . import balanced_ternary
-
 from attr.validators import instance_of
 
 from . import movement
-from .movement import UP,DOWN, LEFT,RIGHT, canEscape
+from .movement import canEscape
 from .movement import EMPTY,HORIZONTAL,VERTICAL
 
     
@@ -136,9 +134,9 @@ class Board:
         # we're only applying valid commands
         self.do_checks=True
         
-    def __hash__(self):
-        walls = balanced_ternary.decode(self.walls.flatten())
-        return hash((self.red, self.blue, self.turn, walls))
+    # def __hash__(self):
+    #     walls = balanced_ternary.decode(self.walls.flatten())
+    #     return hash((self.red, self.blue, self.turn, walls))
         
     def reset(self):
         N               = self.N
@@ -287,9 +285,6 @@ class Board:
     
     def canEscape(self,piece):
         return canEscape(self,piece)
-        
-      
-      
         
     def piecesCanEscape(self):
         return (

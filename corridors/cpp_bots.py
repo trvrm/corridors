@@ -50,9 +50,10 @@ def to_cpp_board(p_board):
     
     
 
-class CPPAlphaBetaBot(BaseBot):
-    def __init__(self):
-        self.c_bot=_corridors.AlphaBetaBot()
+class CPPBotWrapper(BaseBot):
+    def __init__(self,cpp_bot):
+        self.c_bot=cpp_bot
+        #self.c_bot=_corridors.AlphaBetaBot()
         
     def __call__(self,p_board):
         c_board=to_cpp_board(p_board)
@@ -90,3 +91,12 @@ class CPPAlphaBetaBot(BaseBot):
             assert 0
         
         return p_command
+        
+class CPPStepsBot(CPPBotWrapper):
+    def __init__(self):
+        super().__init__(_corridors.StepsBot2())
+        
+class CPPAlphaBetaBot(CPPBotWrapper):
+    def __init__(self):
+        super().__init__(_corridors.AlphaBetaBot())
+        

@@ -10,13 +10,15 @@ name = "pypi"
 aiohttp = "*"
 numpy = "*"
 tqdm = "*"
-pybind11 = "*"
+"pybind11" = "*"
+
 
 [dev-packages]
 
 ipython = "*"
 pytest = "*"
 "flake8" = "*"
+black = "*"
 
 
 [requires]
