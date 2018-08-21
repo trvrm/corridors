@@ -124,7 +124,7 @@ double StepsBot2::evaluate(const Board& board) const{
 
 
 double StepsBot3::evaluate(const Board& board) const{
-    // const double WEIGHT=0.1;
+    
     
     //I want it allergic to a very high wall diff
     double diff = (board.red.walls-board.blue.walls)/4;
