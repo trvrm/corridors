@@ -18,6 +18,13 @@ ext_modules = [
         ],
         language='c++'
     ),
+    Extension(
+        'corridors._corridors_mcts',
+        ['src/mcts/board.cpp','src/mcts/corridors_threaded_api.cpp', 'src/mcts/_corridors_mcts.cpp'],
+        include_dirs=[sys.prefix + '/include/python3.6m'],
+        libraries = ['pthread','boost_python3-py36','boost_numpy3-py36'],
+        language='c++'
+    ),
 ]
 
 class BuildExt(build_ext):
