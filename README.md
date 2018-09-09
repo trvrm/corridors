@@ -1,7 +1,7 @@
 This is designed to be used within a pipenv environment.
 
 ```
-sudo apt install libboost-all-dev scons
+sudo apt install libboost-all-dev
 pipenv install
 ```
 or 
