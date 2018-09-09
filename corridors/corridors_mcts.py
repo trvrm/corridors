@@ -157,8 +157,8 @@ def human_computer_play(mcts, human_plays_first=True, hide_humans_moves=True):
         humans_turn = not humans_turn
 
 if __name__ == '__main__':
-    p1 = Corridors_MCTS(c=sqrt(3),seed=74)
-    print("Do you want to against computer? No means computer self-play. (y/n)")
+    p1 = Corridors_MCTS(c=sqrt(2),seed=74)
+    print("Do you want to play against the computer? No means computer self-play. (y/n)")
     if input()=="y":
         print("Please wait one moment...")
         human_computer_play(p1)

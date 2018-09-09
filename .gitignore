@@ -49,4 +49,4 @@ docs/_build/
 .sconsign.dblite
 
 # executable
-_corridors
+_corridors_mcts

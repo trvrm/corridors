@@ -12,7 +12,7 @@ if int(test):
 include_path = [prefix + '/include/python3.6m']
 lib_path = []
 
-libs = ['pthread']
+libs = []#['pthread']
 if not int(test):
     libs.extend(['boost_python3-py36', 'boost_numpy3-py36'])
 
@@ -23,7 +23,7 @@ if int(debug):
     env.Append(CCFLAGS = '-g')
     env.Append(LINKFLAGS = '-g')
 else:
-    env.Append(CCFLAGS = '-O3') # optimization only when not debugging
+    env.Append(CCFLAGS = '-Ofast') # optimization only when not debugging
 
 profile = ARGUMENTS.get('profile', 0)
 if int(profile):
