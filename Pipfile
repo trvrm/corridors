@@ -18,6 +18,8 @@ tqdm = "*"
 ipython = "*"
 pytest = "*"
 "flake8" = "*"
+scons = "*"
+pylint = "*"
 black = "*"
 
 
