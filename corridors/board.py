@@ -129,8 +129,6 @@ class Board:
         # we're only applying valid commands
         self.do_checks = True
 
-    
-
     def reset(self):
         N = self.N
         M = N - 1
@@ -449,5 +447,3 @@ class Board:
         return (
             command for command in boardCommands(self.N) if self.legalCommand(command)
         )
-
-

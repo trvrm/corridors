@@ -58,7 +58,7 @@ def canMove(walls, j, i, direction):
 
 def stepsToEscape(board, piece):
     N = board.N
-    
+
     walls = board.walls
     squares = np.full((N, N), None)
 
@@ -97,7 +97,7 @@ def canEscape(board, piece):
     walls = board.walls
     checked_squares = set()
     N = board.N
-    
+
     def inner(location, target_rank):
         j = location[0]
         i = location[1]
