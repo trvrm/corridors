@@ -4,6 +4,8 @@ __pycache__/
 .pytest_cache
 # C extensions
 *.so
+*.os
+*.o
 
 # Distribution / packaging
 .Python
@@ -42,3 +44,9 @@ coverage.xml
 
 # Sphinx documentation
 docs/_build/
+
+# scons db
+.sconsign.dblite
+
+# executable
+_corridors_mcts

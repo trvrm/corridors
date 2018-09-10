@@ -18,6 +18,13 @@ ext_modules = [
         ],
         language='c++'
     ),
+    Extension(
+        'corridors._corridors_mcts',
+        ['src/mcts/board.cpp','src/mcts/corridors_threaded_api.cpp', 'src/mcts/_corridors_mcts.cpp'],
+        include_dirs=[sys.prefix + '/include/python3.6m'],
+        libraries = ['boost_python3-py36','boost_numpy3-py36'],
+        language='c++',
+    )
 ]
 
 class BuildExt(build_ext):
@@ -31,10 +38,18 @@ class BuildExt(build_ext):
         # opts.append(cpp_flag(self.compiler))
         # if has_flag(self.compiler, '-fvisibility=hidden'):
         #     opts.append('-fvisibility=hidden')
-        
+
+        # add/remove compiler flags
+        remove_flags = ['-Wall','-g','-O2','-Wstrict-prototypes']
+        add_flags = ['-Ofast','-Wno-attributes']
+
+        self.compiler.compiler_so = [f for f in self.compiler.compiler_so if f not in remove_flags]
+        self.compiler.compiler_so.extend(add_flags)
+
         for ext in self.extensions:
             ext.extra_compile_args = opts
-        build_ext.build_extensions(self)
+        super(BuildExt, self).build_extensions()
+
 
 setup(
     name='corridors',
