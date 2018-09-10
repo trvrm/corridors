@@ -20,9 +20,7 @@ bool contains(const std::set<T> s, const T& v){
 
 enum Color { RED=1,  BLUE =0};
 enum Wall {EMPTY=0,HORIZONTAL=1, VERTICAL=-1};
-
-//enum Direction {LEFT=0, RIGHT=1, UP=2, DOWN=3};
-enum Direction {UP=0x01, RIGHT=0x02, LEFT=0x04, DOWN=0x08};
+enum Direction {UP=0x01, RIGHT=0x02, DOWN=0x04, LEFT=0x08};
 
 std::string direction_name(Direction d);
 
