@@ -32,6 +32,55 @@ class Corridors_MCTS(_corridors_mcts):
     def __init__(self, c=sqrt(2), seed=42, min_simulations=10000, max_simulations=1000000, sim_increment=250):
         super().__init__(c, seed, min_simulations, max_simulations, sim_increment)
 
+
+        
+    def __call__(board):
+        import numpy as np
+        assert hasattr(board,"N"), "Board must have attribute 'N'"
+        assert isinstance(board.N,int), "N must be an integer"
+        assert board.N==9, "Board must be 9x9"
+        assert hasattr(board,'walls'), "Board must have walls attribute"
+        # board has a member 'walls', a 2d numpy array
+        assert isinstance(board.walls,np.ndarray), "board.walls must be numpy array"
+        assert board.walls.shape==(8,8), "board.walls must be 8x8 grid"
+        
+        for w in board.walls.flatten:
+            assert w in (0,-1,1), "each wall must be either -1 (vertical), +1 (horizontal), or zero (nonexistant)"
+        
+        assert hasattr(board,'turn'), "Board must have a turn attribute"
+        assert board.turn in ('red','blue'), "Turn must be one of 'red', 'blue'"
+        assert hasattr(board,'wallsPerPiece'), "Board must have a wallsPerPiece attribute"
+        assert board.wallsPerPiece==10
+        assert hasattr(board,'red'), "board must have a red piece attribute"
+        assert hasattr(board,'blue'), "board must have a blue piece attribute"
+        assert board.red.color=='red'
+        assert board.blue.color=='blue'
+        assert isinstance(board.red.walls,int), "Piece must have integer walls attribute"
+        assert isinstance(board.blue.walls,int), "Piece must have integer walls attribute"
+        assert 0 <=board.red.walls <=10
+        assert 0 <=board.blue.walls <=10
+
+        assert isinstance(board.red.location,tuple), "red piece must have a location"
+        assert len(board.red.location)==2
+        assert isinstance(board.blue.location,tuple), "blue piece must have a location"
+        assert len(board.blue.location)==2
+        
+        assert 0 <=board.red.location[0] <=8, "red Y coordinate must be between 0 and 8"
+        assert 0 <=board.red.location[1] <=8, "red X coordinate must be between 0 and 8"
+        assert 0 <=board.blue.location[0] <=8, "blue Y coordinate must be between 0 and 8"
+        assert 0 <=board.blue.location[1] <=8 , "blue X coordinate must be between 0 and 8"
+        
+        
+        command = some_magic()  # implement this!
+        
+        assert isinstance(command,list), "I represent commands as lists"
+        assert commands[0] in ("hwall","vwall","move","hop"), "not a legal command"
+        all_legal_commands=list(board.allLegalCommands())
+        assert command in all_legal_commands
+        return command
+        
+        
+
     def display(self, flip=False):
         """Provides an ASCII representation of the board from
         heros perspective. Flip will provide the same board
