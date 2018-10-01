@@ -15,6 +15,8 @@ typedef mcts::threaded_tree<corridors::board,mcts::uct_node<corridors::board>> c
 typedef std::mt19937_64 Rand; 
 typedef uint_fast64_t Seed;
 
+corridors::board python_to_c(const p::dict & board);
+
 class corridors_threaded_api : protected corridors_base
 {
 public:
@@ -31,4 +33,5 @@ public:
     void choose_best_action(const double epsilon);
     void ensure_sims(const size_t sims);
     double get_evaluation();
+    std::string set_state_and_make_best_move(const p::dict & board);
 };

@@ -52,3 +52,52 @@ double corridors_threaded_api::get_evaluation()
 {
     return corridors_base::get_evaluation();
 }
+
+std::string corridors_threaded_api::set_state_and_make_best_move(const p::dict & board)
+{
+    bool flip = p::extract<bool>(board.get("flip"));
+    corridors::board c_board = python_to_c(board);
+    return corridors_base::set_state_and_make_best_move(c_board, flip);
+}
+
+corridors::board python_to_c(const p::dict & board)
+{
+    bool flip = p::extract<bool>(board.get("flip"));
+    unsigned short hero_x = p::extract<unsigned short>(board.get("hero_x"));
+    unsigned short hero_y = p::extract<unsigned short>(board.get("hero_y"));
+    unsigned short villain_x = p::extract<unsigned short>(board.get("villain_x"));
+    unsigned short villain_y = p::extract<unsigned short>(board.get("villain_y"));
+    unsigned short hero_walls_remaining = p::extract<unsigned short>(board.get("hero_walls_remaining"));
+    unsigned short villain_walls_remaining = p::extract<unsigned short>(board.get("villain_walls_remaining"));
+
+    p::list wall_middles_list(board.get("wall_middles"));
+    p::list horizontal_walls_list(board.get("horizontal_walls"));
+    p::list vertical_walls_list(board.get("vertical_walls"));
+
+    flags::flags<(BOARD_SIZE-1)*(BOARD_SIZE-1)> wall_middles;
+    flags::flags<(BOARD_SIZE-1)*BOARD_SIZE> horizontal_walls;
+    flags::flags<(BOARD_SIZE-1)*BOARD_SIZE> vertical_walls;
+
+    for (size_t i=0;i<(BOARD_SIZE-1)*(BOARD_SIZE-1);++i)
+        wall_middles.set(i, p::extract<bool>(wall_middles_list[i]));
+
+    for (size_t i=0;i<(BOARD_SIZE-1)*BOARD_SIZE;++i)
+        horizontal_walls.set(i, p::extract<bool>(horizontal_walls_list[i]));
+
+    for (size_t i=0;i<(BOARD_SIZE-1)*BOARD_SIZE;++i)
+        vertical_walls.set(i, p::extract<bool>(vertical_walls_list[i]));
+
+    corridors::board _board(
+        hero_x,
+        hero_y,
+        villain_x, 
+        villain_y,
+        hero_walls_remaining,
+        villain_walls_remaining,
+        wall_middles,
+        horizontal_walls,
+        vertical_walls
+    );
+
+    return corridors::board(_board,flip);
+}

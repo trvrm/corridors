@@ -43,12 +43,43 @@ board::board() noexcept : _action()
     _stored_hash = 0;
 }
 
+board::board(
+    const unsigned short _hero_x,
+    const unsigned short _hero_y,
+    const unsigned short _villain_x, 
+    const unsigned short _villain_y,
+    const unsigned short _hero_walls_remaining,
+    const unsigned short _villain_walls_remaining,
+    const flags::flags<(BOARD_SIZE-1)*(BOARD_SIZE-1)> & _wall_middles,
+    const flags::flags<(BOARD_SIZE-1)*BOARD_SIZE> & _horizontal_walls,
+    const flags::flags<(BOARD_SIZE-1)*BOARD_SIZE> & _vertical_walls
+) noexcept
+: _action()
+{
+    hero_x=_hero_x;
+    hero_y=_hero_y;
+    villain_x=_villain_x;
+    villain_y=_villain_y;
+    hero_walls_remaining=_hero_walls_remaining;
+    villain_walls_remaining=_villain_walls_remaining;
+    wall_middles=_wall_middles;
+    horizontal_walls=_horizontal_walls;
+    vertical_walls=_vertical_walls;
+    // to ensure the hash gets calculated when called
+    _stored_hash = 0;
+}
+
 board& board::operator=(const board & source) noexcept
 {
     if (&source==this)
         return *this;
     Deep_Copy(source, false);
     return *this;
+}
+
+bool board::operator==(const board & source) const noexcept
+{
+    return get_hash() == source.get_hash();
 }
 
 board::~board()

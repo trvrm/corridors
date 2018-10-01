@@ -33,5 +33,6 @@ BOOST_PYTHON_MODULE(_corridors_mcts) {
     .def("make_move", &corridors_threaded_api::make_move)
     .def("get_sorted_actions", &corridors_threaded_api::get_sorted_actions)
     .def("ensure_sims",&corridors_threaded_api::ensure_sims)
-    .def("get_evaluation",&corridors_threaded_api::get_evaluation);
+    .def("get_evaluation",&corridors_threaded_api::get_evaluation)
+    .def("set_state_and_make_best_move",&corridors_threaded_api::set_state_and_make_best_move);
 }
