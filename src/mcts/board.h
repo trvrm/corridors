@@ -24,10 +24,22 @@ namespace corridors {
             };
 
             board() noexcept;
+            board(
+                const unsigned short _hero_x,
+                const unsigned short _hero_y,
+                const unsigned short _villain_x, 
+                const unsigned short _villain_y,
+                const unsigned short _hero_walls_remaining,
+                const unsigned short _villain_walls_remaining,
+                const flags::flags<(BOARD_SIZE-1)*(BOARD_SIZE-1)> & _wall_middles,
+                const flags::flags<(BOARD_SIZE-1)*BOARD_SIZE> & _horizontal_walls,
+                const flags::flags<(BOARD_SIZE-1)*BOARD_SIZE> & _vertical_walls
+            ) noexcept;
             board(const board & source) noexcept;
             board(const board & source, bool flip) noexcept;
             virtual ~board();
             board& operator=(const board & source) noexcept;
+            bool operator==(const board & source) const noexcept;
 
             // moving enabled (must use noexcept to get stl:: containers to use them!)
             board(board&& source) noexcept = default;

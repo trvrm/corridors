@@ -31,6 +31,7 @@ namespace mcts {
             std::string display(const bool flip);
             void choose_best_action(const double epsilon);
             void ensure_sims(const size_t sims);
+            std::string set_state_and_make_best_move(const G & board, const bool flip);
             double get_evaluation();
 
         private:
@@ -92,6 +93,14 @@ mcts::threaded_tree<G,TREE>::threaded_tree(
 }
 
 template <typename G, typename TREE>
+void mcts::threaded_tree<G,TREE>::set_state(const G & input)
+{
+    auto _lock = get_lock(false);
+    _node->set_state(input, _node);
+    _sem.post();
+}
+
+template <typename G, typename TREE>
 mcts::threaded_tree<G,TREE>::~threaded_tree()
 {    
     _terminate = true; // signals to stop the loop
@@ -123,14 +132,6 @@ std::shared_ptr<std::lock_guard<std::mutex>> mcts::threaded_tree<G,TREE>::get_lo
     // give ownership of the lock to the user-- the loop will now remain blocked
     // until they release it, and the user can safely alter state
     return std::move(lock_ptr);
-}
-
-template <typename G, typename TREE>
-void mcts::threaded_tree<G,TREE>::set_state(const G & state)
-{
-    auto _lock = get_lock(false);
-    _node.reset(new TREE(state));
-    _sem.post(); // to restart the loop (if necessary). causes no harm if the loop was already running
 }
 
 template <typename G, typename TREE>
@@ -178,6 +179,29 @@ void mcts::threaded_tree<G,TREE>::ensure_sims(const size_t sims)
     auto _lock = get_lock(true);
     if (_node->get_visit_count()<sims)
         _node->simulate(sims -_node->get_visit_count()+1,_rand,_c);
+}
+
+template <typename G, typename TREE>
+std::string mcts::threaded_tree<G,TREE>::set_state_and_make_best_move(const G & board, const bool flip)
+{
+    auto _lock = get_lock(false);
+    // set the state (shouldn't have an effect in most cases, as we'll already be on the appropriate state)
+    _node->set_state(board, _node);
+    _sem.post();
+
+    // ensure we have performed the minimum number of simulations on the current state
+    if (_node->get_visit_count()<_min_simulations)
+        _node->simulate(_min_simulations -_node->get_visit_count()+1,_rand,_c);
+
+    // get the best move
+    std::vector<std::tuple<size_t, double, std::string>> move_vect = _node->get_sorted_actions(flip);
+    std::string best_move_text = std::get<2>(move_vect[0]);
+
+    // make the best move in the tree
+    _node = _node->make_move(best_move_text, flip);
+
+    // return the text description for the best move
+    return best_move_text;
 }
 
 template <typename G, typename TREE>

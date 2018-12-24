@@ -41,6 +41,7 @@ public:
     uct_node(uct_node && source) noexcept = default;
     uct_node & operator=(uct_node && source) noexcept = default;
     virtual ~uct_node() noexcept = default;
+    void set_state(const G & input, uct_node_ptr & output);
 
 
     void orphan();
@@ -77,6 +78,26 @@ template <typename G>
 mcts::uct_node<G>::uct_node()
 {
     Set_Null();
+}
+
+template <typename G>
+void mcts::uct_node<G>::set_state(const G & input, uct_node_ptr & output)
+{
+    // if we're setting the same session, do nothing
+    if (input==state) return;
+
+    // if it matches a child, return the child
+    for(size_t i=0;i<children.size();++i)
+    {
+        if (input==children[i]->get_state())
+        {
+            output = make_move(i);
+            return;
+        }
+    }
+
+    // otherwise assign a new mcts instance initialized with input to the shared_ptr
+    output.reset(new uct_node(input));
 }
 
 template <typename G>
