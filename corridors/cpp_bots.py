@@ -3,6 +3,7 @@ from . import board
 from . import _corridors
 
 from .profile import timed
+from .corridors_mcts import Corridors_MCTS
 
 # Conversion to/from cpp representation
 def to_python_board(c_board):
@@ -98,3 +99,14 @@ class CPPStepsBot(CPPBotWrapper):
 class CPPAlphaBetaBot(CPPBotWrapper):
     def __init__(self,max_depth):
         super().__init__(_corridors.AlphaBetaBot(max_depth))
+        
+        
+class MCTSBot(BaseBot):
+    def __init__(self):
+        self.c_bot=Corridors_MCTS(
+            min_simulations=1000,
+            max_simulations=10000
+        )
+            
+    def __call__(self, board):
+        return self.c_bot(board)

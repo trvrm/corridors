@@ -1,7 +1,7 @@
-from _corridors_mcts import _corridors_mcts
+from ._corridors_mcts import _corridors_mcts
 from math import sqrt
 import numpy as np
-
+import logging
 # converts Trevor's board format to Matt's, putting in a Python dict to be passed to c++
 def python_to_c_format(board):
     assert hasattr(board,"N"), "Board must have attribute 'N'"
@@ -12,7 +12,7 @@ def python_to_c_format(board):
     assert isinstance(board.walls,np.ndarray), "board.walls must be numpy array"
     assert board.walls.shape==(8,8), "board.walls must be 8x8 grid"
     
-    for w in board.walls.flatten:
+    for w in board.walls.flatten():
         assert w in (0,-1,1), "each wall must be either -1 (vertical), +1 (horizontal), or zero (nonexistant)"
     
     assert hasattr(board,'turn'), "Board must have a turn attribute"
@@ -39,10 +39,10 @@ def python_to_c_format(board):
     assert 0 <=board.blue.location[1] <=8 , "blue X coordinate must be between 0 and 8"
 
     c_format_board={
-        'hero_x':board.red.location[0],
-        'hero_y':board.red.location[1],
-        'villain_x':board.blue.location[0],
-        'villain_y':board.blue.location[1],
+        'hero_x':board.red.location[1],
+        'hero_y':board.red.location[0],
+        'villain_x':board.blue.location[1],
+        'villain_y':board.blue.location[0],
         'hero_walls_remaining':board.red.walls,
         'villain_walls_remaining':board.blue.walls,
         'flip': False if board.turn=='red' else True
@@ -76,19 +76,85 @@ def python_to_c_format(board):
     })
     return c_format_board
  
-def c_move_text_to_python(c_move_text, board):
+ 
+ 
+def c_move_text_to_python(c_move_text,board):
+    
+    
+    logging.info(f"c_move_text_to_python({c_move_text})")
+    logging.info(f"turn: {board.turn}, {board.red}, blue: {board.blue}")
+    assert len(c_move_text)==6
+    action = c_move_text[0]
+    assert action in '*HV'
+    
+    x,y=int(c_move_text[2]),int(c_move_text[4])  # Matt may be doing x,y rather than y,x !!
+    
+    i,j=x,y  # WTF?
+    logging.info(f"{action} {j} {i}")
+    if '*' == action:
+        # first let's make sure our coordinates are correct.
+        piece = board.red if board.turn=='red' else board.blue
+        pj,pi=piece.location
+        if board.turn=='blue':
+            j=8-j
+        diff=abs(pj-j) + abs(pi-i)
+        assert diff <=2, f"Bad move for piece {piece}: {j},{i}"
+        
+        if diff==1:
+            if j==pj:
+                if i>pi:
+                    command=["move","right"]
+                else:
+                    command=["move","left"]
+            else:
+                if j>pj:
+                    command=["move","down"]
+                else:
+                    command=["move","up"]
+        else:
+            assert 0, "still have to do hop commands"
+            command=["hop","?"]  # this is actually difficult
+        
+    else:
+        
+        if board.turn=='blue':
+            j=7-j  # maybe?
+        command = ['hwall' if action=='H' else 'vwall', (j,i)]
+        # wall
+        
+    logging.info(command)
+    all_legal_commands=list(board.allLegalCommands())
+    if command not in all_legal_commands:
+        raise Exception(f"Bad command: {command}")
+    return command
+    
+    
+    
+def WASc_move_text_to_python(c_move_text, board):
     action_type = c_move_text[0]
     is_move = action_type == '*'
     new_coordinates = eval(c_move_text[1:])
-
+    
+    
+    logging.info(f"red: {board.red}, blue: {board.blue}")
+    logging.info(f"c_move_text is {c_move_text}")
     if is_move:
-        old_coordinates =
-            (board.blue.location[0], board.blue.location[1])
-            if c_move_text['flip'] else
-            (board.red.location[0], board.red.location[1])
-        all_legal_moves=
-            [c[1:] for c in board.allLegalCommands()
-            if c[0] in ('move','hop')]
+        if board.turn=='blue':
+            new_coordinates=(8-new_coordinates[0],new_coordinates[1])
+        
+        old_coordinates = board.blue.location if board.turn=='blue' else board.red.location
+        #old_coordinates = board.blue.location if flip else board.red.location
+        
+        logging.info(f"new_coordinates: {new_coordinates}, old_coordinates: {old_coordinates}")
+        
+        #old_coordinates = (board.blue.location[0], board.blue.location[1]) if c_move_text['flip'] else (board.red.location[0], board.red.location[1])
+        # find the move command that produces this outcome...
+        
+        
+        
+        all_legal_moves=[c[1:] for c in board.allLegalCommands() if c[0] in ('move','hop')]
+        
+        # this is no good at all. I'd be better off writing my own function I think.
         for i,m in enumerate(all_legal_moves):
             # compute resulting coordinates from this legal move
             m_coordinates = list(old_coordinates)
@@ -99,11 +165,18 @@ def c_move_text_to_python(c_move_text, board):
                 if d=='down': m_coordinates[1]-=1
             if tuple(m_coordinates)==new_coordinates:
                 command = all_legal_moves[i]                
+                return command  # I assume?
+        raise Exception(f"Couldn't produce a valid python command from '{c_move_text}'")
     else:
         # wall placement
-        command =
-            ['hwall' if action_type=='H' else 'vwall',
-            new_coordinates]
+        
+        # does this need flipped as well? It's not clear to me.
+        if board.turn=='blue':
+            new_coordinates=(7-new_coordinates[0],new_coordinates[1])
+            
+        
+        
+        command = ['hwall' if action_type=='H' else 'vwall', new_coordinates]
 
     return command
 
@@ -163,15 +236,25 @@ class Corridors_MCTS(_corridors_mcts):
 
     def __init__(self, c=sqrt(2), seed=42, min_simulations=10000, max_simulations=1000000, sim_increment=250):
         super().__init__(c, seed, min_simulations, max_simulations, sim_increment)
+    
+    def __json__(self):
+        return {"type": str(type(self)), "name": getattr(self, "name", "unnamed")}
+
      
     def __call__(self, board):
-        c_format_board = python_to_c_format(board)        
+        logging.info("Corridors_MCTS.__call__(...)")
+        logging.info("\n"+str(board))
+        
+        c_format_board = python_to_c_format(board)
         c_move_text = super().set_state_and_make_best_move(c_format_board)
+        
+        logging.info(f"c_move_text is {c_move_text}")
+        logging.info("\n"+str(self.display(board.turn=='blue')))
         command = c_move_text_to_python(c_move_text, board)
-
+        logging.info(f"command is {command}")
         # ensure it's a legal move
         assert isinstance(command,list), "I represent commands as lists"
-        assert commands[0] in ("hwall","vwall","move","hop"), "not a legal command"
+        assert command[0] in ("hwall","vwall","move","hop"), "not a legal command"
         all_legal_commands=list(board.allLegalCommands())
         assert command in all_legal_commands
         return command           

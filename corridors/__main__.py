@@ -48,8 +48,8 @@ async def handle_new_game(ws, who):
         # game.players['blue']=bots.AlphaBetaBot(bots.StepsBot3())
         # game.players['blue']=bots.StepsBot2()
         # game.players['blue']=bots.AlphaBetaBot(bots.DumbBot())
-        game.players["blue"] = cpp_bots.CPPAlphaBetaBot(max_depth=4)
-
+        # game.players["blue"] = cpp_bots.CPPAlphaBetaBot(max_depth=4)
+        game.players["blue"] = cpp_bots.MCTSBot()
     ws.game = game
     shared.games.append(game)
 
@@ -181,15 +181,19 @@ async def handle_game_command(ws, command):
             # command = [command[0],location]
 
         logging.info(command)
-        # really need a
+        
         game.board(*command)
-
+        
+        logging.debug("applied command")
         await ractive_set(ws, "current_game", game)
 
+
+        # this test fails on Corridors_MCTS
         if isinstance(game.players["blue"], bots.BaseBot):
             if not game.board.gameOver():
                 bot = game.players["blue"]
                 # This should probably be run in a threadpool
+                logging.info(" Calling bot")
                 command = bot(game.board)
                 logging.info("Bot suggests :{}".format(command))
                 game.board(*command)
