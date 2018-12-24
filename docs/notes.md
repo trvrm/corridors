@@ -31,6 +31,7 @@ Winner: blue, movecount: 66
 trevor@personal:~/code/corridors$ 
 ```
 
-
+We run into a rather interesting, fundamental problem, with this algorithm, even
+now I have it blisteringly fast.
 
  

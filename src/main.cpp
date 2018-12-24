@@ -154,7 +154,7 @@ PYBIND11_MODULE(_corridors,m) {
     
     
     py::class_<AlphaBetaBot>(m,"AlphaBetaBot")
-        .def(py::init<>())
+        .def(py::init<uint>())
         .def("call",&AlphaBetaBot::call)
     ;
     

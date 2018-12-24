@@ -23,11 +23,12 @@ public:
 class AlphaBetaBot: public BaseBot{
     StepsBot3 evalbot_;
     
-    uint ab_calls;
+    uint ab_calls_;
     double alphabeta(const Board& board, uint depth, double alpha, double beta);
     boost::optional<Command> best_command_;
+    const uint maxDepth_;
 public:
-    AlphaBetaBot(uint maxDepth=1):ab_calls(0){
+    AlphaBetaBot(uint maxDepth=3):ab_calls_(0),maxDepth_(maxDepth){
         
     }
     

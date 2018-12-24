@@ -190,15 +190,10 @@ int stepsToEscape(const Board& board, const Piece& piece){
     
 }
 
-
-
 Command AlphaBetaBot::call(const Board& board){
-    this->ab_calls=0;
-    uint maxDepth=3; //was THREE
-    
+    this->ab_calls_=0;
     best_command_ = boost::optional<Command>();
-    
-    this->alphabeta(board,maxDepth,-inf,inf);
+    this->alphabeta(board,this->maxDepth_,-inf,inf);
     
     if(not best_command_)
         throw std::runtime_error("Couldn't compute a command");
@@ -213,14 +208,14 @@ double AlphaBetaBot::alphabeta(const Board& board, uint depth, double alpha, dou
     if (board.gameOver())
         return evalbot_.evaluate(board);
         
-    this->ab_calls+=1;
+    this->ab_calls_+=1;
     
     std::vector<Command> legalCommands=legal_commands(board);
     //If we don't have any legal commands, we're kinda screwed
     
     if (legalCommands.size()==0){
         std::stringstream s;
-        s << "No legal commands left for AlphaBetaBot to evaluate.  Depth is " << depth << ", ab_calls is " << ab_calls
+        s << "No legal commands left for AlphaBetaBot to evaluate.  Depth is " << depth << ", ab_calls_ is " << ab_calls_
             << "turn is " << board.turn;
         throw std::runtime_error(s.str());
     }
@@ -239,7 +234,7 @@ double AlphaBetaBot::alphabeta(const Board& board, uint depth, double alpha, dou
             alpha=std::max(alpha,v);
             if (beta<=alpha)
                 break;
-            if (ab_calls>=MAX_AB_CALLS){
+            if (ab_calls_>=MAX_AB_CALLS){
                 std::cout << "MAX_AB_CALLS" << endl;
                 break;
             }
@@ -260,7 +255,7 @@ double AlphaBetaBot::alphabeta(const Board& board, uint depth, double alpha, dou
             beta=std::min(beta,v);
             if(beta<=alpha)
                 break;
-            if (ab_calls>=MAX_AB_CALLS){
+            if (ab_calls_>=MAX_AB_CALLS){
                 std::cout << "MAX_AB_CALLS" << endl;
                 break;
             }
@@ -268,5 +263,4 @@ double AlphaBetaBot::alphabeta(const Board& board, uint depth, double alpha, dou
         best_command_=best_command;
         return v;
     }
-    
 }

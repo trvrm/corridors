@@ -48,7 +48,7 @@ async def handle_new_game(ws, who):
         # game.players['blue']=bots.AlphaBetaBot(bots.StepsBot3())
         # game.players['blue']=bots.StepsBot2()
         # game.players['blue']=bots.AlphaBetaBot(bots.DumbBot())
-        game.players["blue"] = cpp_bots.CPPAlphaBetaBot()
+        game.players["blue"] = cpp_bots.CPPAlphaBetaBot(max_depth=4)
 
     ws.game = game
     shared.games.append(game)
@@ -156,7 +156,7 @@ async def handle_game_command(ws, command):
     else:
         assert isinstance(command, list)
 
-    logging.info(command)
+    # logging.info(command)
     user = ws.user
 
     game = ws.game
@@ -189,18 +189,16 @@ async def handle_game_command(ws, command):
         if isinstance(game.players["blue"], bots.BaseBot):
             if not game.board.gameOver():
                 bot = game.players["blue"]
+                # This should probably be run in a threadpool
                 command = bot(game.board)
-                logging.info("Bot suggest :{}".format(command))
+                logging.info("Bot suggests :{}".format(command))
                 game.board(*command)
                 await ractive_set(ws, "current_game", game)
 
         else:
-
             sockets = shared.sockets_for_game(game.uuid)
             for s in sockets:
                 await ractive_set(s, "current_game", game)
-
-        # should also send to other user here!
 
     except Exception as e:
         await notify(ws, str(e), "danger")

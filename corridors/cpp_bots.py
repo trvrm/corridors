@@ -96,5 +96,5 @@ class CPPStepsBot(CPPBotWrapper):
 
 
 class CPPAlphaBetaBot(CPPBotWrapper):
-    def __init__(self):
-        super().__init__(_corridors.AlphaBetaBot())
+    def __init__(self,max_depth):
+        super().__init__(_corridors.AlphaBetaBot(max_depth))
