@@ -195,6 +195,12 @@ std::string mcts::threaded_tree<G,TREE>::set_state_and_make_best_move(const G & 
 
     // get the best move
     std::vector<std::tuple<size_t, double, std::string>> move_vect = _node->get_sorted_actions(flip);
+
+    // handle case where there are no legal moves
+    // to avoid segfault 
+    if (move_vect.empty())
+        return "No legal moves.";
+
     std::string best_move_text = std::get<2>(move_vect[0]);
 
     // make the best move in the tree
