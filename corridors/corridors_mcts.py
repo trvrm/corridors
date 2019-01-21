@@ -38,11 +38,12 @@ def python_to_c_format(board):
     assert 0 <=board.blue.location[0] <=8, "blue Y coordinate must be between 0 and 8"
     assert 0 <=board.blue.location[1] <=8 , "blue X coordinate must be between 0 and 8"
 
+    assert board.turn=='blue', "Error: must be blue's turn. Currently assumes AI is only needed to make decisions for blue"
     c_format_board={
         'hero_x':board.red.location[1],
-        'hero_y':board.red.location[0],
+        'hero_y':board.N-1-board.red.location[0],
         'villain_x':board.blue.location[1],
-        'villain_y':board.blue.location[0],
+        'villain_y':board.N-1-board.blue.location[0],
         'hero_walls_remaining':board.red.walls,
         'villain_walls_remaining':board.blue.walls,
         'flip': False if board.turn=='red' else True
@@ -58,14 +59,14 @@ def python_to_c_format(board):
         for y in range(BOARD_SIZE-1): # y is vertical axis
             curr_wall = board.walls[y,x]
             if curr_wall!=0:
-                middle_ind = y*(BOARD_SIZE-1) + x
+                middle_ind = (BOARD_SIZE-2-y)*(BOARD_SIZE-1) + x
                 wall_middles[middle_ind] = True
                 if curr_wall==1: # horizontal
-                    h_wall_ind = y*BOARD_SIZE + x
+                    h_wall_ind = (BOARD_SIZE-2-y)*BOARD_SIZE + x
                     horizontal_walls[h_wall_ind] = True
                     horizontal_walls[h_wall_ind+1] = True
                 if curr_wall==-1: # vertical
-                    v_wall_ind = x*BOARD_SIZE + y
+                    v_wall_ind = x*BOARD_SIZE + (BOARD_SIZE-1-y)
                     vertical_walls[v_wall_ind] = True
                     vertical_walls[v_wall_ind+1] = True
 
@@ -75,10 +76,8 @@ def python_to_c_format(board):
         'vertical_walls':vertical_walls
     })
     return c_format_board
- 
- 
- 
-def c_move_text_to_python(c_move_text,board):
+
+def TREVORSc_move_text_to_python(c_move_text,board):
     
     
     logging.info(f"c_move_text_to_python({c_move_text})")
@@ -130,7 +129,7 @@ def c_move_text_to_python(c_move_text,board):
     
     
     
-def WASc_move_text_to_python(c_move_text, board):
+def c_move_text_to_python(c_move_text, board):
     action_type = c_move_text[0]
     is_move = action_type == '*'
     new_coordinates = eval(c_move_text[1:])
@@ -240,12 +239,12 @@ class Corridors_MCTS(_corridors_mcts):
     def __json__(self):
         return {"type": str(type(self)), "name": getattr(self, "name", "unnamed")}
 
-     
     def __call__(self, board):
         logging.info("Corridors_MCTS.__call__(...)")
         logging.info("\n"+str(board))
         
         c_format_board = python_to_c_format(board)
+
         c_move_text = super().set_state_and_make_best_move(c_format_board)
         
         logging.info(f"c_move_text is {c_move_text}")
