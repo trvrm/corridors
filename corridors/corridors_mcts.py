@@ -66,7 +66,7 @@ def python_to_c_format(board):
                     horizontal_walls[h_wall_ind] = True
                     horizontal_walls[h_wall_ind+1] = True
                 if curr_wall==-1: # vertical
-                    v_wall_ind = x*BOARD_SIZE + (BOARD_SIZE-1-y)
+                    v_wall_ind = x*BOARD_SIZE + (BOARD_SIZE-2-y)
                     vertical_walls[v_wall_ind] = True
                     vertical_walls[v_wall_ind+1] = True
 
@@ -130,16 +130,18 @@ def TREVORSc_move_text_to_python(c_move_text,board):
     
     
 def c_move_text_to_python(c_move_text, board):
+    import pdb
+    pdb.set_trace()
+
+
+    assert board.turn=='blue', "Move must be from blue's perspective"
     action_type = c_move_text[0]
-    is_move = action_type == '*'
-    new_coordinates = eval(c_move_text[1:])
-    
-    
+    is_positional_move = action_type == '*'
+    new_coordinates = tuple(reversed(eval(c_move_text[1:])))
+        
     logging.info(f"red: {board.red}, blue: {board.blue}")
     logging.info(f"c_move_text is {c_move_text}")
-    if is_move:
-        if board.turn=='blue':
-            new_coordinates=(8-new_coordinates[0],new_coordinates[1])
+    if is_positional_move:
         
         old_coordinates = board.blue.location if board.turn=='blue' else board.red.location
         #old_coordinates = board.blue.location if flip else board.red.location
@@ -149,32 +151,22 @@ def c_move_text_to_python(c_move_text, board):
         #old_coordinates = (board.blue.location[0], board.blue.location[1]) if c_move_text['flip'] else (board.red.location[0], board.red.location[1])
         # find the move command that produces this outcome...
         
+        all_legal_positional_moves=[c[1:] for c in board.allLegalCommands() if c[0] in ('move','hop')]
         
-        
-        all_legal_moves=[c[1:] for c in board.allLegalCommands() if c[0] in ('move','hop')]
-        
-        # this is no good at all. I'd be better off writing my own function I think.
-        for i,m in enumerate(all_legal_moves):
+        for i,m in enumerate(all_legal_positional_moves):
             # compute resulting coordinates from this legal move
             m_coordinates = list(old_coordinates)
             for d in m:
-                if d=='left': m_coordinates[0]-=1
-                if d=='right': m_coordinates[0]+=1
-                if d=='up': m_coordinates[1]+=1
-                if d=='down': m_coordinates[1]-=1
+                if d=='up': m_coordinates[0]+=1
+                if d=='down': m_coordinates[0]-=1
+                if d=='left': m_coordinates[1]-=1
+                if d=='right': m_coordinates[1]+=1
             if tuple(m_coordinates)==new_coordinates:
-                command = all_legal_moves[i]                
-                return command  # I assume?
+                command = all_legal_moves[i]
+                return command                
         raise Exception(f"Couldn't produce a valid python command from '{c_move_text}'")
     else:
         # wall placement
-        
-        # does this need flipped as well? It's not clear to me.
-        if board.turn=='blue':
-            new_coordinates=(7-new_coordinates[0],new_coordinates[1])
-            
-        
-        
         command = ['hwall' if action_type=='H' else 'vwall', new_coordinates]
 
     return command
@@ -246,7 +238,7 @@ class Corridors_MCTS(_corridors_mcts):
         c_format_board = python_to_c_format(board)
 
         c_move_text = super().set_state_and_make_best_move(c_format_board)
-        
+
         logging.info(f"c_move_text is {c_move_text}")
         logging.info("\n"+str(self.display(board.turn=='blue')))
         command = c_move_text_to_python(c_move_text, board)

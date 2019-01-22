@@ -31,7 +31,7 @@ namespace mcts {
             std::string display(const bool flip);
             void choose_best_action(const double epsilon);
             void ensure_sims(const size_t sims);
-            std::string set_state_and_make_best_move(const G & board, const bool flip);
+            std::string set_state_and_make_best_move(const G & board, const bool flip=false);
             double get_evaluation();
 
         private:
