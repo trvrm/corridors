@@ -130,10 +130,6 @@ def TREVORSc_move_text_to_python(c_move_text,board):
     
     
 def c_move_text_to_python(c_move_text, board):
-    import pdb
-    pdb.set_trace()
-
-
     assert board.turn=='blue', "Move must be from blue's perspective"
     action_type = c_move_text[0]
     is_positional_move = action_type == '*'
@@ -151,23 +147,24 @@ def c_move_text_to_python(c_move_text, board):
         #old_coordinates = (board.blue.location[0], board.blue.location[1]) if c_move_text['flip'] else (board.red.location[0], board.red.location[1])
         # find the move command that produces this outcome...
         
-        all_legal_positional_moves=[c[1:] for c in board.allLegalCommands() if c[0] in ('move','hop')]
-        
+        all_legal_positional_moves=[c for c in board.allLegalCommands() if c[0] in ('move','hop')]
+       
         for i,m in enumerate(all_legal_positional_moves):
             # compute resulting coordinates from this legal move
             m_coordinates = list(old_coordinates)
-            for d in m:
-                if d=='up': m_coordinates[0]+=1
-                if d=='down': m_coordinates[0]-=1
+            for d in m[1:]:
+                if d=='up': m_coordinates[0]-=1
+                if d=='down': m_coordinates[0]+=1
                 if d=='left': m_coordinates[1]-=1
                 if d=='right': m_coordinates[1]+=1
             if tuple(m_coordinates)==new_coordinates:
-                command = all_legal_moves[i]
+                command = all_legal_positional_moves[i]
                 return command                
         raise Exception(f"Couldn't produce a valid python command from '{c_move_text}'")
     else:
         # wall placement
-        command = ['hwall' if action_type=='H' else 'vwall', new_coordinates]
+        y,x=new_coordinates
+        command = ['hwall' if action_type=='H' else 'vwall', (y,board.N-2-x)]
 
     return command
 
