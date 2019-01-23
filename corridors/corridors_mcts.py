@@ -127,44 +127,43 @@ def TREVORSc_move_text_to_python(c_move_text,board):
         raise Exception(f"Bad command: {command}")
     return command
     
-    
-    
 def c_move_text_to_python(c_move_text, board):
     assert board.turn=='blue', "Move must be from blue's perspective"
+    BOARD_SIZE = board.N
     action_type = c_move_text[0]
     is_positional_move = action_type == '*'
-    new_coordinates = tuple(reversed(eval(c_move_text[1:])))
+    c_proposed_x, c_proposed_y = eval(c_move_text[1:])
         
     logging.info(f"red: {board.red}, blue: {board.blue}")
-    logging.info(f"c_move_text is {c_move_text}")
+    logging.info(f"c_move_text is {c_move_text}"
+    )
     if is_positional_move:
-        
-        old_coordinates = board.blue.location if board.turn=='blue' else board.red.location
-        #old_coordinates = board.blue.location if flip else board.red.location
-        
-        logging.info(f"new_coordinates: {new_coordinates}, old_coordinates: {old_coordinates}")
-        
-        #old_coordinates = (board.blue.location[0], board.blue.location[1]) if c_move_text['flip'] else (board.red.location[0], board.red.location[1])
-        # find the move command that produces this outcome...
+        new_pos_coordinates = (c_proposed_y, BOARD_SIZE-1-c_proposed_x)    
+        logging.info(f"new_pos_coordinates: {new_pos_coordinates}, curr_pos_coordinates: {board.blue.location}")
         
         all_legal_positional_moves=[c for c in board.allLegalCommands() if c[0] in ('move','hop')]
-       
-        for i,m in enumerate(all_legal_positional_moves):
-            # compute resulting coordinates from this legal move
-            m_coordinates = list(old_coordinates)
-            for d in m[1:]:
+        logging.info(f"legal positional moves: {all_legal_positional_moves}")
+
+        # check each legal positional move to find the one which matches new_pos_coordinates       
+        for m in all_legal_positional_moves:
+            # compute resulting coordinates from this legal move beginning from blue's current location 
+            m_coordinates = list(board.blue.location) # list() ensure's we get a deep copy
+            movement_directions = m[1:] #NB: m[1:] only has more than one element when the command in question is a hop
+            for d in movement_directions: 
                 if d=='up': m_coordinates[0]-=1
                 if d=='down': m_coordinates[0]+=1
                 if d=='left': m_coordinates[1]-=1
                 if d=='right': m_coordinates[1]+=1
-            if tuple(m_coordinates)==new_coordinates:
-                command = all_legal_positional_moves[i]
-                return command                
+            # determine if these resulting coordinates match new_coordinates
+            if tuple(m_coordinates)==new_pos_coordinates:
+                command = m
+                return command
+        # throw an exception if we couldn't find a match             
         raise Exception(f"Couldn't produce a valid python command from '{c_move_text}'")
     else:
         # wall placement
-        y,x=new_coordinates
-        command = ['hwall' if action_type=='H' else 'vwall', (y,board.N-2-x)]
+        new_wall_coordinates = (c_proposed_y, BOARD_SIZE-2-c_proposed_x)
+        command = ['hwall' if action_type=='H' else 'vwall', new_wall_coordinates]
 
     return command
 
@@ -222,7 +221,7 @@ class Corridors_MCTS(_corridors_mcts):
         API is being too slow.
     """
 
-    def __init__(self, c=sqrt(2), seed=42, min_simulations=10000, max_simulations=1000000, sim_increment=250):
+    def __init__(self, c=sqrt(2), seed=42, min_simulations=10000, max_simulations=100000, sim_increment=250):
         super().__init__(c, seed, min_simulations, max_simulations, sim_increment)
     
     def __json__(self):

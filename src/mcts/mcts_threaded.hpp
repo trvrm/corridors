@@ -78,9 +78,9 @@ mcts::threaded_tree<G,TREE>::threaded_tree(
                 {
                     std::unique_lock<std::mutex> lk(_node_mut); // obtain a lock
                     _cv.wait(lk, [&]{return !_pause_loop;}); // _pause_loop signals that the main thread wants access
-                    _node->simulate(_sim_increment,_rand,_c);
-                    if (_node->get_visit_count()<_max_simulations)
-                        _sem.post(); // post if we want to keep looping (so we don't block on _sem.wait())            
+                    bool sims_got_done = _node->simulate(_sim_increment,_rand,_c); // simulate returns false when no sims were done (e.g. when the game is done)
+                    if (_node->get_visit_count()<_max_simulations && sims_got_done)
+                        _sem.post(); // post if we want to keep looping (so we don't block on _sem.wait())
                 }
             }
         }
