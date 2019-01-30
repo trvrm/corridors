@@ -49,7 +49,7 @@ public:
     const G & get_state() const;
 
 
-    void simulate(const size_t simulations, Rand & rand, const double c);
+    bool simulate(const size_t simulations, Rand & rand, const double c);
     void select(uct_node_ptr & leaf, const double c) const;
     void expand();
     double evaluate(Rand & rand) const;
@@ -96,6 +96,9 @@ void mcts::uct_node<G>::set_state(const G & input, uct_node_ptr & output)
         }
     }
 
+    // test code
+    throw std::string("Unable to find state in child node.");
+
     // otherwise assign a new mcts instance initialized with input to the shared_ptr
     output.reset(new uct_node(input));
 }
@@ -125,11 +128,12 @@ const G & mcts::uct_node<G>::get_state() const
     return state;
 }
 
+// returns false if no simulations possible
 template <typename G>
-void mcts::uct_node<G>::simulate(const size_t simulations, Rand & rand, const double c)
+bool mcts::uct_node<G>::simulate(const size_t simulations, Rand & rand, const double c)
 {
     if (children.size()==0) expand();
-    if (children.size()==0) return;
+    if (children.size()==0) return false;
 
     uct_node_ptr leaf;
     for(size_t i=0;i<simulations;++i)
@@ -157,6 +161,7 @@ void mcts::uct_node<G>::simulate(const size_t simulations, Rand & rand, const do
         // backup
         leaf->backprop(eval);
     }
+    return true;
 }
 
 template <typename G>

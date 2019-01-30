@@ -57,7 +57,7 @@ std::string corridors_threaded_api::set_state_and_make_best_move(const p::dict &
 {
     bool flip = p::extract<bool>(board.get("flip"));
     corridors::board c_board = python_to_c(board);
-    return corridors_base::set_state_and_make_best_move(c_board, flip);
+    return corridors_base::set_state_and_make_best_move(c_board, true);
 }
 
 corridors::board python_to_c(const p::dict & board)

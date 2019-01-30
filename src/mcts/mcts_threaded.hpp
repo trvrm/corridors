@@ -78,9 +78,9 @@ mcts::threaded_tree<G,TREE>::threaded_tree(
                 {
                     std::unique_lock<std::mutex> lk(_node_mut); // obtain a lock
                     _cv.wait(lk, [&]{return !_pause_loop;}); // _pause_loop signals that the main thread wants access
-                    _node->simulate(_sim_increment,_rand,_c);
-                    if (_node->get_visit_count()<_max_simulations)
-                        _sem.post(); // post if we want to keep looping (so we don't block on _sem.wait())            
+                    bool sims_got_done = _node->simulate(_sim_increment,_rand,_c); // simulate returns false when no sims were done (e.g. when the game is done)
+                    if (sims_got_done && _node->get_visit_count()<_max_simulations)
+                        _sem.post(); // post if we want to keep looping (so we don't block on _sem.wait())
                 }
             }
         }
@@ -195,6 +195,12 @@ std::string mcts::threaded_tree<G,TREE>::set_state_and_make_best_move(const G & 
 
     // get the best move
     std::vector<std::tuple<size_t, double, std::string>> move_vect = _node->get_sorted_actions(flip);
+
+    // handle case where there are no legal moves
+    // to avoid segfault 
+    if (move_vect.empty())
+        return "No legal moves.";
+
     std::string best_move_text = std::get<2>(move_vect[0]);
 
     // make the best move in the tree

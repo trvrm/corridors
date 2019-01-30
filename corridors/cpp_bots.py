@@ -103,10 +103,7 @@ class CPPAlphaBetaBot(CPPBotWrapper):
         
 class MCTSBot(BaseBot):
     def __init__(self):
-        self.c_bot=Corridors_MCTS(
-            min_simulations=1000,
-            max_simulations=10000
-        )
+        self.c_bot=Corridors_MCTS()
             
     def __call__(self, board):
         return self.c_bot(board)

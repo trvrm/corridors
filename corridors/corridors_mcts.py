@@ -38,11 +38,12 @@ def python_to_c_format(board):
     assert 0 <=board.blue.location[0] <=8, "blue Y coordinate must be between 0 and 8"
     assert 0 <=board.blue.location[1] <=8 , "blue X coordinate must be between 0 and 8"
 
+    assert board.turn=='blue', "Error: must be blue's turn. Currently assumes AI is only needed to make decisions for blue"
     c_format_board={
         'hero_x':board.red.location[1],
-        'hero_y':board.red.location[0],
+        'hero_y':board.N-1-board.red.location[0],
         'villain_x':board.blue.location[1],
-        'villain_y':board.blue.location[0],
+        'villain_y':board.N-1-board.blue.location[0],
         'hero_walls_remaining':board.red.walls,
         'villain_walls_remaining':board.blue.walls,
         'flip': False if board.turn=='red' else True
@@ -58,14 +59,14 @@ def python_to_c_format(board):
         for y in range(BOARD_SIZE-1): # y is vertical axis
             curr_wall = board.walls[y,x]
             if curr_wall!=0:
-                middle_ind = y*(BOARD_SIZE-1) + x
+                middle_ind = (BOARD_SIZE-2-y)*(BOARD_SIZE-1) + x
                 wall_middles[middle_ind] = True
                 if curr_wall==1: # horizontal
-                    h_wall_ind = y*BOARD_SIZE + x
+                    h_wall_ind = (BOARD_SIZE-2-y)*BOARD_SIZE + x
                     horizontal_walls[h_wall_ind] = True
                     horizontal_walls[h_wall_ind+1] = True
                 if curr_wall==-1: # vertical
-                    v_wall_ind = x*BOARD_SIZE + y
+                    v_wall_ind = x*BOARD_SIZE + (BOARD_SIZE-2-y)
                     vertical_walls[v_wall_ind] = True
                     vertical_walls[v_wall_ind+1] = True
 
@@ -75,10 +76,8 @@ def python_to_c_format(board):
         'vertical_walls':vertical_walls
     })
     return c_format_board
- 
- 
- 
-def c_move_text_to_python(c_move_text,board):
+
+def TREVORSc_move_text_to_python(c_move_text,board):
     
     
     logging.info(f"c_move_text_to_python({c_move_text})")
@@ -128,55 +127,43 @@ def c_move_text_to_python(c_move_text,board):
         raise Exception(f"Bad command: {command}")
     return command
     
-    
-    
-def WASc_move_text_to_python(c_move_text, board):
+def c_move_text_to_python(c_move_text, board):
+    assert board.turn=='blue', "Move must be from blue's perspective"
+    BOARD_SIZE = board.N
     action_type = c_move_text[0]
-    is_move = action_type == '*'
-    new_coordinates = eval(c_move_text[1:])
-    
-    
+    is_positional_move = action_type == '*'
+    c_proposed_x, c_proposed_y = eval(c_move_text[1:])
+        
     logging.info(f"red: {board.red}, blue: {board.blue}")
-    logging.info(f"c_move_text is {c_move_text}")
-    if is_move:
-        if board.turn=='blue':
-            new_coordinates=(8-new_coordinates[0],new_coordinates[1])
+    logging.info(f"c_move_text is {c_move_text}"
+    )
+    if is_positional_move:
+        new_pos_coordinates = (c_proposed_y, BOARD_SIZE-1-c_proposed_x)    
+        logging.info(f"new_pos_coordinates: {new_pos_coordinates}, curr_pos_coordinates: {board.blue.location}")
         
-        old_coordinates = board.blue.location if board.turn=='blue' else board.red.location
-        #old_coordinates = board.blue.location if flip else board.red.location
-        
-        logging.info(f"new_coordinates: {new_coordinates}, old_coordinates: {old_coordinates}")
-        
-        #old_coordinates = (board.blue.location[0], board.blue.location[1]) if c_move_text['flip'] else (board.red.location[0], board.red.location[1])
-        # find the move command that produces this outcome...
-        
-        
-        
-        all_legal_moves=[c[1:] for c in board.allLegalCommands() if c[0] in ('move','hop')]
-        
-        # this is no good at all. I'd be better off writing my own function I think.
-        for i,m in enumerate(all_legal_moves):
-            # compute resulting coordinates from this legal move
-            m_coordinates = list(old_coordinates)
-            for d in m:
-                if d=='left': m_coordinates[0]-=1
-                if d=='right': m_coordinates[0]+=1
-                if d=='up': m_coordinates[1]+=1
-                if d=='down': m_coordinates[1]-=1
-            if tuple(m_coordinates)==new_coordinates:
-                command = all_legal_moves[i]                
-                return command  # I assume?
+        all_legal_positional_moves=[c for c in board.allLegalCommands() if c[0] in ('move','hop')]
+        logging.info(f"legal positional moves: {all_legal_positional_moves}")
+
+        # check each legal positional move to find the one which matches new_pos_coordinates       
+        for m in all_legal_positional_moves:
+            # compute resulting coordinates from this legal move beginning from blue's current location 
+            m_coordinates = list(board.blue.location) # list() ensure's we get a deep copy
+            movement_directions = m[1:] #NB: m[1:] only has more than one element when the command in question is a hop
+            for d in movement_directions: 
+                if d=='up': m_coordinates[0]-=1
+                if d=='down': m_coordinates[0]+=1
+                if d=='left': m_coordinates[1]-=1
+                if d=='right': m_coordinates[1]+=1
+            # determine if these resulting coordinates match new_coordinates
+            if tuple(m_coordinates)==new_pos_coordinates:
+                command = m
+                return command
+        # throw an exception if we couldn't find a match             
         raise Exception(f"Couldn't produce a valid python command from '{c_move_text}'")
     else:
         # wall placement
-        
-        # does this need flipped as well? It's not clear to me.
-        if board.turn=='blue':
-            new_coordinates=(7-new_coordinates[0],new_coordinates[1])
-            
-        
-        
-        command = ['hwall' if action_type=='H' else 'vwall', new_coordinates]
+        new_wall_coordinates = (c_proposed_y, BOARD_SIZE-2-c_proposed_x)
+        command = ['hwall' if action_type=='H' else 'vwall', new_wall_coordinates]
 
     return command
 
@@ -234,20 +221,20 @@ class Corridors_MCTS(_corridors_mcts):
         API is being too slow.
     """
 
-    def __init__(self, c=sqrt(2), seed=42, min_simulations=10000, max_simulations=1000000, sim_increment=250):
+    def __init__(self, c=sqrt(2), seed=42, min_simulations=10000, max_simulations=100000, sim_increment=250):
         super().__init__(c, seed, min_simulations, max_simulations, sim_increment)
     
     def __json__(self):
         return {"type": str(type(self)), "name": getattr(self, "name", "unnamed")}
 
-     
     def __call__(self, board):
         logging.info("Corridors_MCTS.__call__(...)")
         logging.info("\n"+str(board))
         
         c_format_board = python_to_c_format(board)
+
         c_move_text = super().set_state_and_make_best_move(c_format_board)
-        
+
         logging.info(f"c_move_text is {c_move_text}")
         logging.info("\n"+str(self.display(board.turn=='blue')))
         command = c_move_text_to_python(c_move_text, board)
